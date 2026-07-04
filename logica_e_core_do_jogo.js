@@ -72,6 +72,8 @@ function loadQuestion() {
     isWaitingAnswer = false; const team = teams[currentTeamIndex]; const q = activeQuestions[globalQuestionIndex]; if(gameMode === 'multi') el('current-team-name-hud').innerText = team.name;
     restoreHelpsUI(); el('q-counter').innerText = team.level + 1;
     
+    // FUNDO DINÂMICO: PERGUNTAS NORMAL
+    el('bg-game').src = "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND_PERGUNTAS_NORMAL.png";
     el('bg-game').classList.remove('dim-bg-extreme'); el('char-host').classList.remove('dim-bg-extreme'); el('question-panel-wrapper').classList.remove('dim-bg-extreme');
     el('spot-1').className = 'spotlight spot-left spot-white'; el('spot-2').className = 'spotlight spot-right spot-white';
     changeBrutusPose('normal');
@@ -118,7 +120,11 @@ function resumeTimer() { resetTimer(); }
 
 function forceTimeOut() { 
     closeDraggableHologram(); el('game-vignette').classList.remove('vignette-panic'); const team = teams[currentTeamIndex]; team.status = 'lost'; teams[currentTeamIndex].responseTimes.push(30000); audioSystem.stopAll(); audioSystem.play('errou'); isWaitingAnswer = true; 
+    
+    // FUNDO DINÂMICO: ERRO (TEMPO)
+    el('bg-game').src = "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND_FEEDBACK_ERRO.png";
     el('spot-1').className = 'spotlight spot-left spot-red'; el('spot-2').className = 'spotlight spot-right spot-red'; el('main-q-box').classList.add('animate-shake'); changeBrutusPose('erro');
+    
     const q = activeQuestions[globalQuestionIndex]; window.lastAnsweredQuestion = q; recordAnswerSnapshot(q, null, false, team, 'timeout');
     qsa('.btn-alternative').forEach((btn, idx) => { btn.style.pointerEvents = 'none'; if(idx !== q.answer) btn.classList.add('fade-out-wrong-btn'); else btn.classList.add('correct'); });
     const tempoAudio = Math.random() > 0.5 ? 'voice_tempo1' : 'voice_tempo2'; audioSystem.play(tempoAudio); 
@@ -129,6 +135,8 @@ function selectAnswer(selectedIndex, buttonElement) {
     closeDraggableHologram(); if (isWaitingAnswer) return; clearInterval(timerInterval); el('timer-circle').classList.remove('timer-panic'); el('game-vignette').classList.remove('vignette-panic'); pendingAnswerIndex = selectedIndex; pendingButtonElement = buttonElement; 
     if (window.questionStartTime) { teams[currentTeamIndex].responseTimes.push(Date.now() - window.questionStartTime); } 
     
+    // FUNDO DINÂMICO: SUSPENSE
+    el('bg-game').src = "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND_PERGUNTAS_SUSPENSE.png";
     changeBrutusPose('tenso_cinematic'); 
     el('spot-1').className = 'spotlight spot-left spot-tension'; el('spot-2').className = 'spotlight spot-right spot-tension';
 
@@ -145,8 +153,13 @@ function selectAnswer(selectedIndex, buttonElement) {
 }
 
 function cancelAnswer() { 
-    teams[currentTeamIndex].responseTimes.pop(); window.questionStartTime = Date.now(); changeBrutusPose('normal'); 
+    teams[currentTeamIndex].responseTimes.pop(); window.questionStartTime = Date.now(); 
+    
+    // RETORNA AO FUNDO NORMAL
+    el('bg-game').src = "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND_PERGUNTAS_NORMAL.png";
+    changeBrutusPose('normal'); 
     el('spot-1').className = 'spotlight spot-left spot-white'; el('spot-2').className = 'spotlight spot-right spot-white';
+    
     el('confirm-box').classList.remove('scale-100'); el('confirm-box').classList.add('scale-95'); 
     setTimeout(() => { el('modal-confirm').classList.add('hidden'); el('modal-confirm').classList.remove('flex'); }, 300); 
     if(pendingButtonElement) pendingButtonElement.classList.remove('pulse-answer'); 
@@ -172,6 +185,8 @@ function confirmAnswer() {
         
         const isCorrect = pendingAnswerIndex === q.answer;
         if (isCorrect) {
+            // FUNDO DINÂMICO: ACERTO
+            el('bg-game').src = "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND_FEEDBACK_ACERTO.png";
             changeBrutusPose('acerto'); el('spot-1').className = 'spotlight spot-left spot-green'; el('spot-2').className = 'spotlight spot-right spot-green'; team.level++; globalQuestionIndex++; window.lastAnsweredQuestion = q; recordAnswerSnapshot(q, pendingAnswerIndex, true, team); audioSystem.stopAll(); audioSystem.play('certa'); audioSystem.play('voice_acerto'); pendingButtonElement.classList.add('flash-correct'); el('award-display').classList.add('animate-award-pop'); qsa('.btn-alternative').forEach((btn, idx) => { if(idx !== q.answer) btn.classList.add('fade-out-wrong-btn'); });
             
             const floatScore = ce('div'); floatScore.className = 'floating-score'; floatScore.innerText = `+${awards[team.level-1]}`; pendingButtonElement.appendChild(floatScore);
@@ -179,6 +194,8 @@ function confirmAnswer() {
             let nextActionTriggered = false; const goNext = () => { if (nextActionTriggered) return; nextActionTriggered = true; setTimeout(() => { const gameScreen = el('screen-game'); gameScreen.style.transition = 'opacity 0.6s ease'; gameScreen.style.opacity = '0'; setTimeout(() => { if(team.level < 16) { gameScreen.style.opacity = '1'; advanceToNextTurn(); } else { team.status = 'won'; audioSystem.stopAll(); audioSystem.play('vitoria'); el('final-win-award').innerText = "1 MILHÃO"; el('end-win-team').innerText = isStudentMode ? `Fim de Treino: ${team.name}` : `Equipe Campeã: ${team.name}`; const winScreen = el('screen-end-win'); winScreen.classList.remove('hidden'); winScreen.classList.add('active'); checkGameEnd('win'); setTimeout(() => { const winBox = el('win-box'); winBox.classList.remove('scale-90', 'opacity-0'); winBox.classList.add('scale-100', 'opacity-100'); triggerConfetti(); }, 300); } }, 600); }, 1200); };
             audioSystem.voice_acerto.onended = goNext; audioSystem.voice_acerto.onerror = goNext; setTimeout(goNext, 8000); 
         } else {
+            // FUNDO DINÂMICO: ERRO
+            el('bg-game').src = "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND_FEEDBACK_ERRO.png";
             changeBrutusPose('erro'); el('spot-1').className = 'spotlight spot-left spot-red'; el('spot-2').className = 'spotlight spot-right spot-red'; el('main-q-box').classList.add('animate-shake'); team.status = 'lost'; globalQuestionIndex++; window.lastAnsweredQuestion = q; recordAnswerSnapshot(q, pendingAnswerIndex, false, team); audioSystem.stopAll(); audioSystem.play('errou'); audioSystem.play('voice_errou'); pendingButtonElement.classList.add('wrong'); qsa('.btn-alternative')[q.answer].classList.add('correct'); qsa('.btn-alternative').forEach((btn, idx) => { if(idx !== q.answer) btn.classList.add('fade-out-wrong-btn'); });
             let erroTriggered = false; const goErro = () => { if (erroTriggered) return; erroTriggered = true; setTimeout(() => { el('main-q-box').classList.remove('animate-shake'); showFeedbackAndNext("Resposta Incorreta!", 'wrong'); }, 800); }; audioSystem.voice_errou.onended = goErro; audioSystem.voice_errou.onerror = goErro; setTimeout(goErro, 8000);
         }
