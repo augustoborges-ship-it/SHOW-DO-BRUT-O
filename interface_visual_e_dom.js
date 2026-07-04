@@ -174,7 +174,71 @@ window.renderSkillsAnalysis = function() {
 
 window.clearReports = function() { if(confirm("Limpar diário?")) { writeJSONKey(STORAGE_KEYS.reports, []); window.renderReportsList(); if(!el('tab-content-skills').classList.contains('hidden')) window.renderSkillsAnalysis(); if(typeof window.checkReportsInbox === 'function') window.checkReportsInbox(); } };
 
-// --- EXPORTAÇÃO ---
+// --- BLINDAGEM DA FÁBRICA DE JOGOS E EXPORTAÇÃO ---
 window.openExportGame = function() { el('modal-export-game').classList.remove('hidden'); el('modal-export-game').classList.add('flex'); };
 window.closeExportGame = function() { el('modal-export-game').classList.add('hidden'); el('modal-export-game').classList.remove('flex'); };
 window.showEmbedModal = function(link, iframe) { el('share-link-input').value = link; el('share-iframe-input').value = iframe; el('modal-share').classList.remove('hidden'); el('modal-share').classList.add('flex'); };
+
+window.generateMutantGame = async function(type) {
+    console.log("Iniciando geração de Jogo Mutante. Tipo:", type);
+    
+    // Fallbacks robustos caso os elementos do DOM falhem
+    const inputName = el('export-mission-name');
+    const selectMode = el('export-mode');
+    const selectSource = el('export-source');
+    
+    const missao = (inputName && inputName.value.trim()) ? inputName.value.trim() : "Atividade de Treino";
+    const mode = (selectMode && selectMode.value) ? selectMode.value : 'treino';
+    const src = (selectSource && selectSource.value) ? selectSource.value : 'all';
+    
+    let pool = src === 'all' ? allQuestions : allQuestions.filter(q => q.isCustom);
+    
+    if (!pool || pool.length === 0) {
+        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Erro na Fábrica", "O banco de questões não tem perguntas suficientes para gerar o Jogo.", "error");
+        else alert("Erro: Sem questões suficientes.");
+        return;
+    }
+    
+    let exportQ = pool;
+    if (mode === 'prova') {
+        exportQ = [...pool].sort(() => Math.random() - 0.5).slice(0, 16);
+    }
+    
+    try {
+        const payloadStr = JSON.stringify({ missionId: missao, mode: mode, questions: exportQ });
+        const payloadBase64 = btoa(unescape(encodeURIComponent(payloadStr)));
+        
+        if (type === 'embed') {
+            const url = window.location.href.split('#')[0].split('?')[0] + '#mutant=' + payloadBase64;
+            const iframe = `<iframe src="${url}" width="100%" height="750" style="border:none; border-radius:15px; overflow:hidden;" allowfullscreen></iframe>`;
+            window.closeExportGame(); 
+            window.showEmbedModal(url, iframe); 
+            return;
+        }
+
+        // Modo Download (HTML Isolado)
+        let html = await (await fetch(window.location.href)).text();
+        const styleStr = '<style>div[onclick="window.openProfLogin()"], div[onclick="openProfLogin()"] {display:none!important;}</style>';
+        const scriptStr = `<script>window.__MUTANT="${payloadBase64}";<\/script>`;
+        
+        html = html.replace('</head>', `\n${styleStr}\n${scriptStr}\n</head>`);
+        
+        const blob = new Blob([html], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a'); 
+        a.href = blobUrl;
+        a.download = `Show_do_Brutao_${missao.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        
+        window.closeExportGame(); 
+        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Fábrica de Jogos", "O Ficheiro HTML do seu Jogo foi gerado e o download começou. Envie este ficheiro aos alunos.", "success");
+        
+    } catch(e) { 
+        console.error("Fábrica de Jogos Falhou:", e);
+        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Erro Crítico", "A Fábrica de Jogos não conseguiu compilar o HTML. Detalhe: " + e.message, "error");
+        else alert("Falha na geração do HTML.");
+    }
+};
