@@ -174,71 +174,91 @@ window.renderSkillsAnalysis = function() {
 
 window.clearReports = function() { if(confirm("Limpar diário?")) { writeJSONKey(STORAGE_KEYS.reports, []); window.renderReportsList(); if(!el('tab-content-skills').classList.contains('hidden')) window.renderSkillsAnalysis(); if(typeof window.checkReportsInbox === 'function') window.checkReportsInbox(); } };
 
-// --- BLINDAGEM DA FÁBRICA DE JOGOS E EXPORTAÇÃO ---
+// --- EXPORTAÇÃO ---
 window.openExportGame = function() { el('modal-export-game').classList.remove('hidden'); el('modal-export-game').classList.add('flex'); };
 window.closeExportGame = function() { el('modal-export-game').classList.add('hidden'); el('modal-export-game').classList.remove('flex'); };
 window.showEmbedModal = function(link, iframe) { el('share-link-input').value = link; el('share-iframe-input').value = iframe; el('modal-share').classList.remove('hidden'); el('modal-share').classList.add('flex'); };
 
-window.generateMutantGame = async function(type) {
-    console.log("Iniciando geração de Jogo Mutante. Tipo:", type);
+// --- IMPORTAÇÃO EM MASSA (SISTEMA DE MODAL CUSTOMIZADO ANTI-BLOQUEIO) ---
+window.importMassCodes = function() {
+    let modal = el('modal-mass-import');
+    if (!modal) {
+        modal = ce('div');
+        modal.id = 'modal-mass-import';
+        modal.className = 'fixed inset-0 z-[99999] flex bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-gradient-to-b from-blue-900 to-black border-2 border-emerald-500 rounded-3xl p-8 max-w-2xl w-full shadow-[0_0_50px_rgba(16,185,129,0.4)] relative">
+                <button onclick="document.getElementById('modal-mass-import').classList.add('hidden'); document.getElementById('modal-mass-import').classList.remove('flex');" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+                <div class="w-16 h-16 bg-emerald-900/50 border border-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">📥</div>
+                <h2 class="text-2xl font-black text-white font-orbitron text-center uppercase tracking-widest mb-2">Importação em Massa</h2>
+                <p class="text-emerald-200/70 text-sm font-montserrat mb-6 text-center">Cole abaixo os códigos dos boletins dos alunos. Pode colar vários códigos separados por vírgula ou em novas linhas.</p>
+                
+                <textarea id="mass-import-textarea" rows="6" class="w-full bg-black/50 border border-emerald-500/50 rounded-xl p-4 text-emerald-300 font-mono text-sm focus:border-emerald-400 focus:outline-none mb-6 custom-scrollbar placeholder-emerald-800" placeholder="Ex: eyJ0eXBlIjoic3R1ZGVudF90cmFpbmluZyIs..."></textarea>
+                
+                <div class="flex gap-4">
+                    <button onclick="document.getElementById('modal-mass-import').classList.add('hidden'); document.getElementById('modal-mass-import').classList.remove('flex');" class="w-1/3 bg-gray-800 text-white font-bold py-4 rounded-xl hover:bg-gray-700 uppercase text-xs tracking-widest">Cancelar</button>
+                    <button onclick="window.processMassImportData()" class="w-2/3 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black py-4 rounded-xl hover:scale-105 transition-transform uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.3)]">Sincronizar Dados</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
     
-    // Fallbacks robustos caso os elementos do DOM falhem
-    const inputName = el('export-mission-name');
-    const selectMode = el('export-mode');
-    const selectSource = el('export-source');
-    
-    const missao = (inputName && inputName.value.trim()) ? inputName.value.trim() : "Atividade de Treino";
-    const mode = (selectMode && selectMode.value) ? selectMode.value : 'treino';
-    const src = (selectSource && selectSource.value) ? selectSource.value : 'all';
-    
-    let pool = src === 'all' ? allQuestions : allQuestions.filter(q => q.isCustom);
-    
-    if (!pool || pool.length === 0) {
-        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Erro na Fábrica", "O banco de questões não tem perguntas suficientes para gerar o Jogo.", "error");
-        else alert("Erro: Sem questões suficientes.");
+    el('mass-import-textarea').value = '';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => el('mass-import-textarea').focus(), 100);
+};
+
+window.processMassImportData = function() {
+    const rawInput = el('mass-import-textarea').value;
+    if (!rawInput || !rawInput.trim()) {
+        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Aviso", "O campo está vazio. Cole algum código para importar.", "info");
         return;
     }
-    
-    let exportQ = pool;
-    if (mode === 'prova') {
-        exportQ = [...pool].sort(() => Math.random() - 0.5).slice(0, 16);
-    }
-    
-    try {
-        const payloadStr = JSON.stringify({ missionId: missao, mode: mode, questions: exportQ });
-        const payloadBase64 = btoa(unescape(encodeURIComponent(payloadStr)));
-        
-        if (type === 'embed') {
-            const url = window.location.href.split('#')[0].split('?')[0] + '#mutant=' + payloadBase64;
-            const iframe = `<iframe src="${url}" width="100%" height="750" style="border:none; border-radius:15px; overflow:hidden;" allowfullscreen></iframe>`;
-            window.closeExportGame(); 
-            window.showEmbedModal(url, iframe); 
-            return;
-        }
 
-        // Modo Download (HTML Isolado)
-        let html = await (await fetch(window.location.href)).text();
-        const styleStr = '<style>div[onclick="window.openProfLogin()"], div[onclick="openProfLogin()"] {display:none!important;}</style>';
-        const scriptStr = `<script>window.__MUTANT="${payloadBase64}";<\/script>`;
-        
-        html = html.replace('</head>', `\n${styleStr}\n${scriptStr}\n</head>`);
-        
-        const blob = new Blob([html], { type: 'text/html' });
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a'); 
-        a.href = blobUrl;
-        a.download = `Show_do_Brutao_${missao.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
-        document.body.appendChild(a); 
-        a.click(); 
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-        
-        window.closeExportGame(); 
-        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Fábrica de Jogos", "O Ficheiro HTML do seu Jogo foi gerado e o download começou. Envie este ficheiro aos alunos.", "success");
-        
-    } catch(e) { 
-        console.error("Fábrica de Jogos Falhou:", e);
-        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Erro Crítico", "A Fábrica de Jogos não conseguiu compilar o HTML. Detalhe: " + e.message, "error");
-        else alert("Falha na geração do HTML.");
+    const codes = rawInput.split(/[\n,]+/);
+    let added = 0;
+    let skipped = 0;
+    let reports = window.readJSONKey(STORAGE_KEYS.reports, []);
+
+    codes.forEach(code => {
+        const cleanCode = code.trim();
+        if(!cleanCode) return;
+        try {
+            const dec = JSON.parse(atob(cleanCode));
+            const token = `${dec.student}_${dec.timestamp}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            if (!reports.some(r => r.tokenSignature === token) && dec.type === 'student_training') {
+                dec.receivedAt = new Date().toISOString();
+                dec.isNew = true;
+                dec.tokenSignature = token;
+                dec.linkedClassId = null;
+                reports.push(dec);
+                added++;
+            } else {
+                skipped++;
+            }
+        } catch (e) {
+            skipped++;
+        }
+    });
+
+    const modal = el('modal-mass-import');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    if (added > 0) {
+        window.writeJSONKey(STORAGE_KEYS.reports, reports);
+        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Sucesso", `${added} boletim(ns) importado(s) com sucesso! ${skipped} ignorado(s).`, "success");
+        if (typeof window.renderReportsList === 'function') window.renderReportsList();
+        if (typeof window.renderSkillsAnalysis === 'function' && el('tab-content-skills') && !el('tab-content-skills').classList.contains('hidden')) {
+            window.renderSkillsAnalysis();
+        }
+        if (typeof window.checkReportsInbox === 'function') window.checkReportsInbox();
+    } else {
+        if(typeof window.showSystemMessage === 'function') window.showSystemMessage("Nenhum Dado", `Nenhum boletim novo importado. ${skipped} código(s) ignorado(s) ou inválido(s).`, "info");
     }
 };
