@@ -10,7 +10,8 @@ window.STORAGE_KEYS = Object.freeze({
     classes: `${window.APP_CONFIG.storagePrefix}classes`,
     reports: `${window.APP_CONFIG.storagePrefix}reports`,
     telemetry: `${window.APP_CONFIG.storagePrefix}telemetry`,
-    lgpd: `${window.APP_CONFIG.storagePrefix}lgpd_accepted`
+    lgpd: `${window.APP_CONFIG.storagePrefix}lgpd_accepted`,
+    missions: `${window.APP_CONFIG.storagePrefix}missions` /* NOVA CHAVE PARA MISSÕES */
 });
 
 // --- FUNÇÕES UTILITÁRIAS GLOBAIS BLINDADAS ---
@@ -69,7 +70,9 @@ window.normalizeImageUrl = function(url) {
 // --- VARIÁVEIS DE ESTADO GLOBAL ---
 var allQuestions = []; 
 var allTurmas = []; 
+var allMissions = []; /* NOVO: Guarda as missões criadas */
 var activeTurmaId = null;
+var activeMissionId = null; /* NOVO: Missão a ser editada */
 var activeQuestions = []; 
 var globalQuestionIndex = 0; 
 var teams = []; 
