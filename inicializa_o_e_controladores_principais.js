@@ -1,64 +1,4 @@
-// --- ESCUDO DE INICIALIZAÇÃO DO MOTOR MODULAR (SISTEMA DE AUTO-CURA) ---
-
-window.initApplication = function() {
-    console.log("Iniciando Acoplamento de Segurança Máxima AAA+...");
-
-    // 1. BLINDAGEM MÁXIMA DOS BOTÕES PRINCIPAIS (Ignora o HTML se estiver quebrado)
-    try {
-        // Localiza o Card do Educador visualmente, ignorando bugs de código
-        var profCard = document.querySelector('[onclick*="openProfLogin"]') || 
-                       Array.from(document.querySelectorAll('h3')).find(h => h.innerText.includes('Educador'))?.parentElement;
-        
-        if (profCard) {
-            profCard.removeAttribute('onclick'); // Desativa qualquer chamada HTML quebrada
-            
-            profCard.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("Interceptador: Card Educador Clicado.");
-                
-                var modal = document.getElementById('modal-prof-login');
-                
-                // AUTO-CURA: Se o modal não existir no HTML, o JS cria na hora!
-                if (!modal) {
-                    console.warn("Auto-Cura: Modal PRO ausente. Injetando via JavaScript na força bruta.");
-                    modal = document.createElement('div');
-                    modal.id = 'modal-prof-login';
-                    modal.className = 'fixed inset-0 z-[99999] flex bg-black/90 backdrop-blur-xl flex-col items-center justify-center p-4';
-                    modal.innerHTML = `
-                        <div class="bg-gradient-to-b from-gray-900 to-black border-2 border-purple-500 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(168,85,247,0.4)] relative">
-                            <button onclick="document.getElementById('modal-prof-login').classList.add('hidden'); document.getElementById('modal-prof-login').classList.remove('flex');" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-                            <div class="w-20 h-20 bg-purple-900/50 border border-purple-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner">🔒</div>
-                            <h2 class="text-2xl font-black text-white font-orbitron tracking-wider mb-2 uppercase">Acesso Restrito</h2>
-                            <p class="text-purple-200/70 text-sm font-montserrat mb-8">Insira o PIN do Educador. (Padrão: 1234)</p>
-                            <input type="password" id="prof-pin-input" placeholder="****" maxlength="4" class="w-full text-center text-3xl font-black tracking-widest bg-black/50 border-2 border-purple-500/50 rounded-xl p-4 text-white focus:border-purple-400 focus:outline-none mb-6">
-                            <div id="login-error" class="hidden text-red-400 text-sm font-bold mb-4 animate-pulse">PIN Incorreto!</div>
-                            <button id="btn-unlock-pro-js" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black py-4 rounded-xl hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all uppercase tracking-widest">Desbloquear</button>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                    document.getElementById('btn-unlock-pro-js').addEventListener('click', window.authProf);
-                } else {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                    var pinInput = document.getElementById('prof-pin-input');
-                    var errLabel = document.getElementById('login-error');
-                    if (pinInput) pinInput.value = '';
-                    if (errLabel) errLabel.classList.add('hidden');
-                }
-            });
-        }
-
-        // Localiza o Card do Modo Aluno e faz a mesma blindagem
-        var alunoCard = document.querySelector('[onclick*="openStudentSetup"]') || 
-                        Array.from(document.querySelectorAll('h3')).find(h => h.innerText.includes('Modo Aluno'))?.parentElement;
-        
-        if (alunoCard) {
-            alunoCard.removeAttribute('onclick');
-            alunoCard.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-// --- 9. CONFIGURAÇÃO INICIAL (APP.JS) ---
+// --- INICIALIZAÇÃO DE DADOS ---
 window.initTurmasData = function() { window.allTurmas = window.readJSONKey(window.STORAGE_KEYS.classes, []); };
 window.initMissionsData = function() { window.allMissions = window.readJSONKey(window.STORAGE_KEYS.missions, []); };
 
@@ -80,13 +20,105 @@ window.initGameData = function() {
     try { 
         window.initTurmasData(); 
         window.initMissionsData(); // Carrega o histórico de missões
-        const bnccQuestions = bancoEmbutidoJSONL.trim().split('\n').filter(l => l.trim() && l.trim().startsWith('{')).map(l => { const q = JSON.parse(l.trim()); const optMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }; return { id: q.id || "BNCC", text: q.enunciado, category: `${q.componente} • ${q.ano} • Proficiência: ${q.nivel_proficiencia||'Básico'}`, componente: (q.componente||'').toLowerCase(), ano: (q.ano||'').toLowerCase(), proficiencia: (q.nivel_proficiencia||'Básico').toLowerCase(), options: [q.alternativas.A, q.alternativas.B, q.alternativas.C, q.alternativas.D], answer: optMap[q.resposta_correta], explicacao: q.explicacao||"", image_url: q.image_url||null, bncc: q.bncc||"N/A", isCustom: false }; }); 
+        const bnccQuestions = window.bancoEmbutidoJSONL.trim().split('\n').filter(l => l.trim() && l.trim().startsWith('{')).map(l => { const q = JSON.parse(l.trim()); const optMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }; return { id: q.id || "BNCC", text: q.enunciado, category: `${q.componente} • ${q.ano} • Proficiência: ${q.nivel_proficiencia||'Básico'}`, componente: (q.componente||'').toLowerCase(), ano: (q.ano||'').toLowerCase(), proficiencia: (q.nivel_proficiencia||'Básico').toLowerCase(), options: [q.alternativas.A, q.alternativas.B, q.alternativas.C, q.alternativas.D], answer: optMap[q.resposta_correta], explicacao: q.explicacao||"", image_url: q.image_url||null, bncc: q.bncc||"N/A", isCustom: false }; }); 
         const cust = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []); 
         window.allQuestions = [...bnccQuestions, ...cust]; 
     } catch (e) {}
 };
 
-// --- FUNÇÕES DE SEGURANÇA E NAVEGAÇÃO ---
+window.checkMagicLinkSync = function() { 
+    const urlParams = new URLSearchParams(window.location.search); 
+    const syncData = urlParams.get('sync'); 
+    if (syncData) { 
+        try { const decoded = JSON.parse(atob(syncData)); window.processImportedBoletim(decoded); } catch(e) {} 
+    } 
+};
+
+window.processImportedBoletim = function(data) { 
+    if(data.type !== 'student_training') return; 
+    const token = String(data.student + '_' + data.timestamp).toLowerCase().replace(new RegExp("[^a-z0-9]", "g"), ''); 
+    let reports = window.readJSONKey(window.STORAGE_KEYS.reports, []); 
+    if(reports.some(r => r.tokenSignature === token)) { 
+        window.showSystemMessage("Spam Evitado", `Este relatório já foi importado!`, "error"); 
+        window.history.replaceState({}, document.title, window.location.pathname); 
+        return; 
+    } 
+    window.pendingSyncData = data; 
+    window.pendingSyncData.tokenSignature = token; 
+    window.el('sync-student-name').innerText = data.student; 
+    window.el('sync-level').innerText = data.level; 
+    const select = window.el('sync-class-select'); 
+    select.innerHTML = '<option value="">Apenas Histórico Geral (Sem Vínculo)</option>'; 
+    window.allTurmas.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (${t.ano||''})</option>`; }); 
+    window.el('modal-sync').classList.remove('hidden'); window.el('modal-sync').classList.add('flex'); 
+    if(typeof window.audioSystem !== 'undefined') window.audioSystem.play('certa'); 
+};
+
+window.acceptSync = function() { 
+    if(!window.pendingSyncData) return; 
+    let reports = window.readJSONKey(window.STORAGE_KEYS.reports, []); 
+    window.pendingSyncData.receivedAt = new Date().toISOString(); 
+    window.pendingSyncData.isNew = true; 
+    window.pendingSyncData.linkedClassId = window.el('sync-class-select').value || null; 
+    reports.push(window.pendingSyncData); 
+    window.writeJSONKey(window.STORAGE_KEYS.reports, reports); 
+    window.el('modal-sync').classList.add('hidden'); 
+    window.history.replaceState({}, document.title, window.location.pathname); 
+    window.showSystemMessage("Importado", "Boletim guardado com sucesso no Diário.", "success"); 
+    if(typeof window.renderReportsList === 'function') window.renderReportsList(); 
+};
+
+window.rejectSync = function() { 
+    window.el('modal-sync').classList.add('hidden'); 
+    window.history.replaceState({}, document.title, window.location.pathname); 
+};
+
+window.importMassCodes = function() { 
+    const rawInput = window.el('mass-import-textarea') ? window.el('mass-import-textarea').value : prompt("Cole o código:"); 
+    if(!rawInput) return; 
+    const codes = rawInput.split(new RegExp("[\\n,]+")); 
+    let added = 0; let skipped = 0; let reports = window.readJSONKey(window.STORAGE_KEYS.reports, []); 
+    codes.forEach(code => { 
+        const cleanCode = code.trim(); 
+        if(!cleanCode) return; 
+        try { 
+            const dec = JSON.parse(atob(cleanCode)); 
+            const token = String(dec.student + '_' + dec.timestamp).toLowerCase().replace(new RegExp("[^a-z0-9]", "g"), ''); 
+            if(!reports.some(r => r.tokenSignature === token) && dec.type === 'student_training') { 
+                dec.receivedAt = new Date().toISOString(); 
+                dec.isNew = true; dec.tokenSignature = token; 
+                dec.linkedClassId = null; reports.push(dec); added++; 
+            } else skipped++; 
+        } catch(e) { skipped++; } 
+    }); 
+    if (window.el('modal-mass-import')) { window.el('modal-mass-import').classList.add('hidden'); window.el('modal-mass-import').classList.remove('flex'); } 
+    if(added > 0) { 
+        window.writeJSONKey(window.STORAGE_KEYS.reports, reports); 
+        window.showSystemMessage("Sucesso", `${added} boletim(ns) importado(s)!`, "success"); 
+        if(window.el('screen-reports') && window.el('screen-reports').classList.contains('active')) { window.renderReportsList(); if(window.el('tab-content-skills') && !window.el('tab-content-skills').classList.contains('hidden')) window.renderSkillsAnalysis(); } 
+    } else window.showSystemMessage("Nenhum Dado", "Códigos já existiam ou são inválidos.", "info"); 
+};
+
+window.processMassImportData = window.importMassCodes;
+
+window.wipeAllDataLGPD = function() { 
+    if(confirm("Deseja apagar PERMANENTEMENTE todos os dados curados (turmas, alunos, VAAR e relatórios) para fins de conformidade com a LGPD? A ação é local e definitiva.")) { 
+        window.removeStorageKey(window.STORAGE_KEYS.classes); window.removeStorageKey(window.STORAGE_KEYS.reports); window.removeStorageKey(window.STORAGE_KEYS.telemetry); window.removeStorageKey(window.STORAGE_KEYS.missions); window.removeStorageKey(window.STORAGE_KEYS.customQuestions);
+        window.showSystemMessage("Esquecimento Concluído", "Informações privadas foram expurgadas.", "success"); 
+        window.goBackToHome(); 
+    } 
+};
+
+window.downloadBoletimOffline = function(hash, studentName) { 
+    const blob = new Blob([hash], { type: "text/plain" }); 
+    const url = URL.createObjectURL(blob); 
+    const a = window.ce('a'); a.href = url; 
+    const dateStr = new Date().toISOString().split('T')[0]; 
+    a.download = `Boletim_${studentName.replace(new RegExp("[^a-zA-Z0-9]", "g"), '_')}_${dateStr}.brutao`; 
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); 
+    window.showSystemMessage("Sucesso", "Boletim salvo! Entregue este arquivo (.brutao) ao seu professor.", "success"); 
+};
+
 window.startStudentGame = function() {
     const mHash = window.location.hash.startsWith('#mutant=') ? window.location.hash.substring(8) : null;
     const mutantData = window.__MUTANT || mHash;
@@ -125,7 +157,6 @@ window.startStudentGame = function() {
         window.activeQuestions.forEach(q => { const opts = q.options.map((txt, i) => ({ txt: txt, isC: i === q.answer })); opts.sort(() => Math.random() - 0.5); q.options = opts.map(o => o.txt); q.answer = opts.findIndex(o => o.isC); });
         window.globalQuestionIndex = 0; window.el('screen-setup-student').classList.remove('active'); window.fireUpGame();
     } else {
-        // ... Lógica padrão offline mantida sem alterações ...
         window.clearProgress(); window.isStudentMode = true; window.el('student-error-area').innerHTML = '';
         const pName = window.el('student-name').value.trim() || "Herói Anônimo"; const year = window.el('student-year').value.toLowerCase(); const subject = window.el('student-subject').value.toLowerCase(); const diff = window.qs('input[name="student-diff"]:checked').value.toLowerCase();
         window.teams = [{ name: pName, level: 0, status: 'playing', helps: { eliminar: false, palpite: false, dica: false, pular: 0 }, turmaId: null, students: [], responseTimes: [] }]; window.gameMode = 'single'; window.currentTeamIndex = 0;
@@ -138,70 +169,27 @@ window.startStudentGame = function() {
     }
 };
 
-window.checkLGPDFirst = function() {
-    var lgpdKey = (window.STORAGE_KEYS && window.STORAGE_KEYS.lgpd) ? window.STORAGE_KEYS.lgpd : 'brutao_lgpd_accepted';
-    var accepted = false;
-    try { accepted = localStorage.getItem(lgpdKey); } catch(e){}
-    
-    if (accepted) {
-        window.forcaEntradaDashboard();
-    } else {
-        var modalLgpd = document.getElementById('modal-lgpd');
-        // Auto-cura do modal LGPD caso tenha sido apagado
-        if (!modalLgpd) {
-            console.warn("Auto-Cura: Modal LGPD injetado via JavaScript.");
-            modalLgpd = document.createElement('div');
-            modalLgpd.id = 'modal-lgpd';
-            modalLgpd.className = 'fixed inset-0 z-[99999] flex bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4';
-            modalLgpd.innerHTML = `
-                <div class="bg-gradient-to-b from-slate-900 to-black border-2 border-indigo-500 rounded-3xl p-8 max-w-xl w-full shadow-[0_0_50px_rgba(99,102,241,0.4)] relative">
-                    <div class="w-16 h-16 bg-indigo-900/50 border border-indigo-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">⚖️</div>
-                    <h2 class="text-2xl font-black text-white font-orbitron text-center uppercase tracking-widest mb-4">Termo de Privacidade (LGPD)</h2>
-                    <div class="bg-black/50 border border-white/10 rounded-xl p-5 mb-6 text-sm text-gray-300 font-montserrat text-left">
-                        <p class="mb-3">Os dados do Game Show são armazenados <strong>localmente neste dispositivo</strong>.</p>
-                        <p>Ao inserir métricas de alunos, você atua como Controlador de dados.</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <button id="btn-lgpd-recusar" class="w-1/3 bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-700">Sair</button>
-                        <button id="btn-lgpd-aceitar" class="w-2/3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black py-3 rounded-xl hover:scale-105 transition-transform">Concordar e Entrar</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modalLgpd);
-            
-            document.getElementById('btn-lgpd-aceitar').addEventListener('click', function() {
-                try { localStorage.setItem(lgpdKey, 'true'); } catch(e){}
-                modalLgpd.classList.add('hidden'); modalLgpd.classList.remove('flex');
-                window.forcaEntradaDashboard();
-            });
-            
-            document.getElementById('btn-lgpd-recusar').addEventListener('click', function() {
-                modalLgpd.classList.add('hidden'); modalLgpd.classList.remove('flex');
-            });
-        } else {
-            modalLgpd.classList.remove('hidden');
-            modalLgpd.classList.add('flex');
-        }
-    }
+window.openStudentSetup = function() {
+    window.closeDraggableHologram(); 
+    if(typeof window.audioSystem !== 'undefined') window.audioSystem.play('suspense'); 
+    window.qsa('.screen').forEach(s => s.classList.remove('active')); 
+    window.el('screen-setup-student').classList.add('active'); 
+    const mHash = window.location.hash.startsWith('#mutant=') ? window.location.hash.substring(8) : null; 
+    if(window.__MUTANT || mHash) { 
+        const f = window.el('student-filters-wrapper'); if(f) f.style.display = 'none'; 
+        const d = window.el('student-diff-wrapper'); if(d) d.style.display = 'none'; 
+        const title = window.qs('#screen-setup-student h2'); if(title) title.innerText = window.CURRENT_MISSION_ID || "Avaliação"; 
+    } 
 };
 
-window.forcaEntradaDashboard = function() {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-    var painel = document.getElementById('screen-prof-dashboard');
-    if (painel) {
-        painel.classList.add('active');
-        if (typeof window.checkReportsInbox === 'function') window.checkReportsInbox();
-        else if (typeof checkReportsInbox === 'function') checkReportsInbox();
-    } else {
-        alert("ERRO GRAVE: A tela do Painel PRO não existe no seu arquivo HTML! Revise o seu código index.html.");
-    }
-};
+// --- EVENTOS DO APLICATIVO ---
+window.addEventListener('DOMContentLoaded', () => { 
+    window.initGameData(); 
+    const holoEl = window.el("draggable-hologram"); const holoHeader = window.el("drag-header"); 
+    if(holoEl && holoHeader) window.makeDraggable(holoEl, holoHeader);
+    if(window.readJSONKey(window.STORAGE_KEYS.state, null) && window.el('btn-resume-home')) window.el('btn-resume-home').classList.remove('hidden'); 
+    if(window.location.search.includes('sync')) window.checkMagicLinkSync(); 
+    setTimeout(window.skipIntro, 8500); 
+});
 
-// --- ACIONAMENTO DO MOTOR COM ATRASO DE SEGURANÇA ---
-if (document.readyState === "complete" || document.readyState === "interactive") {
-    setTimeout(window.initApplication, 300);
-} else {
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(window.initApplication, 300);
-    });
-}
+window.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'Enter') window.skipIntro(); });
