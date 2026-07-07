@@ -11,7 +11,8 @@ window.STORAGE_KEYS = Object.freeze({
     reports: window.APP_CONFIG.storagePrefix + 'reports', 
     telemetry: window.APP_CONFIG.storagePrefix + 'telemetry', 
     lgpd: window.APP_CONFIG.storagePrefix + 'lgpd_accepted',
-    missions: window.APP_CONFIG.storagePrefix + 'missions' 
+    missions: window.APP_CONFIG.storagePrefix + 'missions',
+    outbox: window.APP_CONFIG.storagePrefix + 'outbox' // O Novo Cofre de Segurança!
 });
 
 window.el = function(id) { return document.getElementById(id); };
@@ -63,6 +64,7 @@ window.copyToClipboardFallback = function(text, btnElement) {
 window.normalizeImageUrl = function(url) { 
     if(!url) return ""; 
     let clean = url.trim(); 
+    // Correção: Uso de new RegExp para blindar o código e evitar erros na leitura do browser.
     let m = clean.match(new RegExp("/file/d/([a-zA-Z0-9_-]+)")); 
     if(m) return "https://drive.google.com/uc?export=view&id=" + m[1]; 
     if(clean.includes('dropbox.com') && clean.endsWith('dl=0')) return clean.replace('dl=0', 'raw=1'); 
@@ -72,9 +74,7 @@ window.normalizeImageUrl = function(url) {
 // --- 2. VARIÁVEIS GLOBAIS DE ESTADO ---
 window.allQuestions = []; 
 window.allTurmas = []; 
-window.allMissions = [];
 window.activeTurmaId = null;
-window.activeMissionId = null;
 window.activeQuestions = []; 
 window.globalQuestionIndex = 0; 
 window.teams = []; 
