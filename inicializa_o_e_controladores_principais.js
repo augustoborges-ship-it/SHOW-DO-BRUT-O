@@ -10,7 +10,7 @@ window.initGameData = function() {
             const p = JSON.parse(decodeURIComponent(escape(atob(mutantData)))); 
             window.CURRENT_MISSION_ID = p.missionId; 
             window.MUTANT_MODE = p.mode; 
-            window.MUTANT_DATE_START = p.dateStart; // NOVO: Captura as datas
+            window.MUTANT_DATE_START = p.dateStart; 
             window.MUTANT_DATE_END = p.dateEnd;
             window.allQuestions = p.questions; 
             if(mHash) { const s = window.ce('style'); s.innerHTML = 'div[onclick="window.openProfLogin()"]{display:none!important;}'; document.head.appendChild(s); }
@@ -19,11 +19,35 @@ window.initGameData = function() {
     }
     try { 
         window.initTurmasData(); 
-        window.initMissionsData(); // Carrega o histórico de missões
-        const bnccQuestions = window.bancoEmbutidoJSONL.trim().split('\n').filter(l => l.trim() && l.trim().startsWith('{')).map(l => { const q = JSON.parse(l.trim()); const optMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }; return { id: q.id || "BNCC", text: q.enunciado, category: `${q.componente} • ${q.ano} • Proficiência: ${q.nivel_proficiencia||'Básico'}`, componente: (q.componente||'').toLowerCase(), ano: (q.ano||'').toLowerCase(), proficiencia: (q.nivel_proficiencia||'Básico').toLowerCase(), options: [q.alternativas.A, q.alternativas.B, q.alternativas.C, q.alternativas.D], answer: optMap[q.resposta_correta], explicacao: q.explicacao||"", image_url: q.image_url||null, bncc: q.bncc||"N/A", isCustom: false }; }); 
+        window.initMissionsData(); 
+        
+        // Garante que o banco base é lido corretamente e convertido num array usável.
+        const bnccQuestions = window.bancoEmbutidoJSONL.trim().split('\n').filter(l => l.trim() && l.trim().startsWith('{')).map(l => { 
+            const q = JSON.parse(l.trim()); 
+            const optMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }; 
+            return { 
+                id: q.id || "BNCC", 
+                text: q.enunciado, 
+                category: `${q.componente} • ${q.ano} • Proficiência: ${q.nivel_proficiencia||'Básico'}`, 
+                componente: (q.componente||'').toLowerCase(), 
+                ano: (q.ano||'').toLowerCase(), 
+                proficiencia: (q.nivel_proficiencia||'Básico').toLowerCase(), 
+                options: [q.alternativas.A, q.alternativas.B, q.alternativas.C, q.alternativas.D], 
+                answer: optMap[q.resposta_correta], 
+                explicacao: q.explicacao||"", 
+                image_url: q.image_url||null, 
+                bncc: q.bncc||"N/A", 
+                isCustom: false 
+            }; 
+        }); 
         const cust = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []); 
         window.allQuestions = [...bnccQuestions, ...cust]; 
-    } catch (e) {}
+        
+        // Log para auditoria do Diretor
+        console.log(`Motor Carregado: ${window.allQuestions.length} questões disponíveis no cofre.`);
+    } catch (e) {
+        console.error("Falha Crítica ao ler o Banco de Questões:", e);
+    }
 };
 
 window.checkMagicLinkSync = function() { 

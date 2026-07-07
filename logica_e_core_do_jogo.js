@@ -28,6 +28,46 @@ window.markTelemetrySent = function(key, attempts) {
     window.writeJSONKey(window.STORAGE_KEYS.telemetry, t); 
 };
 
+// --- AUTENTICAÇÃO E PERFIS ---
+window.authProf = function() { 
+    const pin = window.el('prof-pin-input').value.trim(); 
+    if (pin === '1234') { 
+        window.closeProfLogin(); 
+        window.checkLGPDFirst(); 
+    } else { 
+        window.el('login-error').classList.remove('hidden'); 
+    } 
+};
+
+window.checkLGPDFirst = function() { 
+    const accepted = window.readJSONKey(window.STORAGE_KEYS.lgpd, false); 
+    if (accepted) { 
+        window.enterProfDashboard(); 
+    } else { 
+        window.el('modal-lgpd').classList.remove('hidden'); 
+        window.el('modal-lgpd').classList.add('flex'); 
+    } 
+};
+
+window.acceptLGPD = function() { 
+    if (!window.el('lgpd-checkbox').checked) { 
+        alert("Marque a caixa para concordar com o termo de segurança de dados."); 
+        return; 
+    } 
+    window.writeJSONKey(window.STORAGE_KEYS.lgpd, true); 
+    window.el('modal-lgpd').classList.add('hidden'); 
+    window.enterProfDashboard(); 
+};
+
+window.declineLGPD = function() { 
+    window.el('modal-lgpd').classList.add('hidden'); 
+};
+
+window.logoutProf = function() { 
+    window.qsa('.screen').forEach(s => s.classList.remove('active')); 
+    window.el('screen-home').classList.add('active'); 
+};
+
 // --- GESTÃO DE MISSÕES (A NOVA FÁBRICA) ---
 window.saveMission = function() {
     if(!window.activeMissionId) return;
