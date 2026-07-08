@@ -1,18 +1,14 @@
-### PASSO 2: O Motor Inquebrável (Substituição Completa)
-Abra o arquivo **`inicializa_o_e_controladores_principais.js`**, apague **TUDO** e cole este código. Ele possui a blindagem máxima que obriga o jogo a carregar as questões.
-
-```javascript:inicializa_o_e_controladores_principais.js
 // =========================================================================
 // Arquivo: inicializa_o_e_controladores_principais.js
 // Função: Eventos de inicialização, DOMContentLoaded e Conexão UI -> Motor
 // =========================================================================
 
-/* STREAMING_CHUNK:Configurando variáveis de controle... */
+/* STREAMING_CHUNK:Declarando variáveis de segurança no escopo Global... */
 window.PIN_ACESSO_PRO = "1234";
 window.dificuldadeModoTreino = "fácil";
 window.bancoOriginal = [];
 
-/* STREAMING_CHUNK:Garantindo o Acesso PRO... */
+/* STREAMING_CHUNK:Função de Validação do Acesso PRO (Blindada)... */
 window.authProf = function(e) {
     if(e) { e.preventDefault(); e.stopPropagation(); }
     var inputSenha = document.getElementById('prof-pin-input') || document.querySelector('#modal-prof-login input');
@@ -30,6 +26,13 @@ window.authProf = function(e) {
         inputSenha.value = "";
         var modal = inputSenha.closest('.fixed');
         if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        
+        // Força a transição para o dashboard caso o outro arquivo falhe
+        var screens = document.querySelectorAll('.screen');
+        for(var s=0; s<screens.length; s++) screens[s].classList.remove('active');
+        var dashboard = document.getElementById('screen-prof-dashboard');
+        if(dashboard) dashboard.classList.add('active');
+        
         if (typeof window.enterProfDashboard === 'function') window.enterProfDashboard();
     } else if (inputSenha) {
         inputSenha.classList.add('border-red-500', 'animate-pulse');
@@ -37,26 +40,22 @@ window.authProf = function(e) {
     }
 };
 
-/* STREAMING_CHUNK:Tradutor de Banco e Conversor Lexical... */
+/* STREAMING_CHUNK:Tradutor e Conversor de JSON (100% Tolerante a Falhas)... */
 window.initGameData = function() {
-    console.log("[Core-Init] Iniciando Injeção de Dados...");
-    
+    console.log("[Core-Init] Lendo Banco Global de 7MB...");
     try {
         if(typeof window.initTurmasData === 'function') window.initTurmasData();
-
         var rawBank = window.BANCO_BRUTAO_GLOBAL;
         
-        // Verifica se o banco carregou. Se falhar, injeta o teste de emergência.
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
-            console.error("🚨 ALERTA: window.BANCO_BRUTAO_GLOBAL falhou. Verifique se há erros de vírgula/sintaxe no seu arquivo de 7MB.");
+            console.error("🚨 window.BANCO_BRUTAO_GLOBAL está vazio. Verifique o arquivo de 7MB.");
             rawBank = [{
-                "id": "EMERGENCIA_TOTAL", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
-                "pergunta": "O SEU ARQUIVO motor_do_banco_de_questoes.js ESTÁ COM UM ERRO DE SINTAXE. O Javascript não conseguiu ler as 2.000 questões. Verifique vírgulas ou chaves faltando. Quanto é 2 + 2?",
-                "alternativas": ["1", "2", "4", "8"], "correta": 2, "justificativa_gabarito": "Resolva o erro no JSON."
+                "id": "EMERGENCIA_01", "disciplina": "Geral", "ano": "5º Ano", "nivel": "Básico",
+                "pergunta": "O Javascript bloqueou a leitura. Verifique se o arquivo motor_do_banco_de_questoes.js tem erros. Quanto é 10 + 10?",
+                "alternativas": ["10", "20", "30", "40"], "correta": 1, "justificativa_gabarito": "Teste de sistema."
             }];
         }
 
-        // Mapeia todas as questões do seu JSON para o formato do jogo
         const globalQuestionsParsed = rawBank.map((q, index) => { 
             let anoSeguro = String(q.ano || 'Geral');
             if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) anoSeguro += 'º Ano';
@@ -78,8 +77,7 @@ window.initGameData = function() {
             let prof = String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico');
 
             return { 
-                id: String(q.id || `GLOBAL_${index}`), 
-                text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
+                id: String(q.id || `GLOBAL_${index}`), text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
                 category: `${comp} • ${anoSeguro} • Proficiência: ${prof}`, 
                 componente: comp.toLowerCase(), ano: anoSeguro.toLowerCase(), proficiencia: prof.toLowerCase(), 
                 options: [altA, altB, altC, altD], answer: ansIdx, explicacao: String(q.justificativa_gabarito || ""), 
@@ -87,14 +85,18 @@ window.initGameData = function() {
             }; 
         });
 
-        window.allQuestions = globalQuestionsParsed;
-        console.log(`✅ [Core-Init] ${window.allQuestions.length} questões disponíveis na memória do jogo!`);
+        var customQuestions = [];
+        if (typeof window.readJSONKey === 'function' && window.STORAGE_KEYS) {
+            customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
+        }
+        window.allQuestions = globalQuestionsParsed.concat(customQuestions);
+        console.log(`✅ [Core-Init] ${window.allQuestions.length} questões mapeadas em RAM!`);
     } catch (e) {
-        console.error("Falha fatal no mapeamento:", e);
+        console.error("Erro fatal no initGameData:", e);
     }
 };
 
-/* STREAMING_CHUNK:Event Delegation Global (Protege os botões)... */
+/* STREAMING_CHUNK:Eventos Globais de Mouse (Delegação Total Inteligente)... */
 document.addEventListener("DOMContentLoaded", function() {
     if (typeof window.initGameData === 'function') window.initGameData();
 
@@ -122,6 +124,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 window.startStudentGame();
             } else if (typeof window.startGame === 'function') {
                 window.startGame();
+            } else {
+                alert("Aviso: O motor do jogo não foi carregado corretamente.");
             }
         }
     }, true);
