@@ -1,8 +1,13 @@
-// --- 3. BANCO DE QUESTÕES GLOBAL DA COMUNIDADE ---
-window.bancoEmbutidoJSONL = `
-{"id": "LP_1ANO_0001", "componente": "Língua Portuguesa", "ano": "1º ano", "nivel_proficiencia": "Básico", "enunciado": "Qual é a letra inicial de BOLA?", "alternativas": {"A": "D", "B": "C", "C": "F", "D": "B"}, "resposta_correta": "D", "explicacao": "BOLA começa com B.", "bncc": "EF01LP01", "isCustom": false}
-{"id": "MAT_5ANO_0100", "componente": "Matemática", "ano": "5º ano", "nivel_proficiencia": "Avançado", "enunciado": "Tabela de pontos: Ana 8, Bia 6, Caio 9. Quem fez menos pontos?", "alternativas": {"A": "Ana", "B": "Todos", "C": "Bia", "D": "Caio"}, "resposta_correta": "C", "explicacao": "Bia fez 6, o menor número.", "bncc": "EF05MA01", "isCustom": false}
-`;
+// --- 3. BANCO DE QUESTÕES GLOBAL (MÓDULO EXTERNO) ---
+
+/* 
+ * ATENÇÃO MESTRE: 
+ * O banco de questões não fica mais chumbado aqui! 
+ * O jogo agora procura por uma variável mágica chamada 'window.BANCO_BRUTAO_GLOBAL'
+ * que será carregada de um arquivo externo (ex: banco_questoes_global.js).
+ * Isso garante carregamento instantâneo, funciona offline e permite atualizações sem tocar no código do jogo!
+ */
+
 window.pendingImportQuestions = [];
 
 window.renderQuestionBank = function() { 
@@ -10,16 +15,16 @@ window.renderQuestionBank = function() {
     if(!container) return;
     container.innerHTML = ''; 
     if(window.allQuestions.length === 0) { 
-        container.innerHTML = `<div class="text-center text-gray-500 py-10">O banco está vazio.</div>`; 
+        container.innerHTML = `<div class="text-center text-gray-500 py-10 font-bold">O banco global e pessoal estão vazios.</div>`; 
         return; 
     } 
     window.allQuestions.forEach((q) => { 
         const isCust = q.isCustom; 
         const card = window.ce('div'); 
-        card.className = "bg-white/5 border border-white/10 rounded-xl p-4 mb-4 hover:bg-white/10 transition-colors"; 
+        card.className = "bg-white/5 border border-white/10 rounded-xl p-4 mb-4 hover:bg-white/10 transition-colors shadow-lg"; 
         const badgeColor = isCust ? 'bg-fuchsia-900 text-fuchsia-300 border-fuchsia-500' : 'bg-blue-900 text-blue-300 border-blue-500'; 
-        const badgeText = isCust ? 'Editável' : 'Nativa do Site'; 
-        const btnHtml = isCust ? `<div class="flex gap-2"><button onclick="window.editCustomQuestion('${q.id}')" class="text-yellow-400 text-xs font-bold bg-yellow-900/30 px-3 py-1 rounded border border-yellow-500/30">Editar</button><button onclick="window.deleteCustomQuestion('${q.id}')" class="text-red-400 text-xs font-bold bg-red-900/30 px-3 py-1 rounded border border-red-500/30">Excluir</button></div>` : ''; 
+        const badgeText = isCust ? 'Editável (Seu Banco)' : 'Nativa (Banco Global)'; 
+        const btnHtml = isCust ? `<div class="flex gap-2"><button onclick="window.editCustomQuestion('${q.id}')" class="text-yellow-400 text-xs font-bold bg-yellow-900/30 px-3 py-1 rounded border border-yellow-500/30 hover:bg-yellow-500 hover:text-black transition-colors">Editar</button><button onclick="window.deleteCustomQuestion('${q.id}')" class="text-red-400 text-xs font-bold bg-red-900/30 px-3 py-1 rounded border border-red-500/30 hover:bg-red-500 hover:text-white transition-colors">Excluir</button></div>` : ''; 
         card.innerHTML = `<div class="flex justify-between items-start mb-2"><div class="flex gap-3 items-center flex-wrap"><span class="text-white font-bold font-mono text-sm bg-black/50 px-2 py-1 rounded border border-gray-700">${q.id}</span><span class="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border ${badgeColor}">${badgeText}</span><span class="text-gray-400 text-xs">${q.category}</span></div>${btnHtml}</div><p class="text-gray-200 text-sm mb-3 font-medium">${q.text}</p>`; 
         container.appendChild(card); 
     }); 
@@ -85,13 +90,23 @@ window.renderCommunityBankList = function() {
     const container = window.el('community-bank-list'); 
     if(!container) return;
     container.innerHTML = ''; 
-    const nativeQs = window.bancoEmbutidoJSONL.trim().split('\n').filter(l => l.trim() && l.trim().startsWith('{')).map(l => JSON.parse(l.trim())); 
-    if (nativeQs.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-10">O banco global está vazio no momento.</p>'; return; } 
+    const nativeQs = window.BANCO_BRUTAO_GLOBAL || []; 
+    
+    if (nativeQs.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-10">O banco global está vazio ou o arquivo externo não foi carregado.</p>'; return; } 
+    
     nativeQs.forEach((q, index) => { 
         const div = window.ce('div'); 
         div.className = "flex items-start gap-4 p-4 bg-black/40 border border-white/10 rounded-xl mb-3 hover:bg-white/5 transition-colors cursor-pointer group"; 
         div.onclick = function(e) { if(e.target.tagName.toLowerCase() !== 'input') { const cb = window.el(`comm-cb-${index}`); if(cb) cb.checked = !cb.checked; } }; 
-        div.innerHTML = `<input type="checkbox" id="comm-cb-${index}" value="${index}" class="comm-checkbox w-6 h-6 mt-1 accent-emerald-500 cursor-pointer"><div class="flex-1 pointer-events-none"><div class="flex gap-2 items-center mb-2 flex-wrap"><span class="bg-blue-900/50 text-blue-300 border border-blue-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${q.componente || 'Geral'}</span><span class="bg-indigo-900/50 text-indigo-300 border border-indigo-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${q.ano || 'Geral'}</span><span class="bg-yellow-900/50 text-yellow-300 border border-yellow-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${q.nivel_proficiencia || 'Básico'}</span></div><p class="text-white text-sm font-medium leading-relaxed group-hover:text-emerald-200 transition-colors">${q.enunciado}</p></div>`; 
+        
+        // Tratamento robusto para os nomes do JSON
+        const comp = q.disciplina || q.componente || 'Geral';
+        let anoStr = String(q.ano || 'Geral');
+        if (anoStr !== 'Geral' && !anoStr.toLowerCase().includes('ano')) anoStr += 'º Ano';
+        const prof = q.nivel || q.nivel_proficiencia || 'Básico';
+        const enun = q.pergunta || q.enunciado || 'Questão sem enunciado';
+
+        div.innerHTML = `<input type="checkbox" id="comm-cb-${index}" value="${index}" class="comm-checkbox w-6 h-6 mt-1 accent-emerald-500 cursor-pointer"><div class="flex-1 pointer-events-none"><div class="flex gap-2 items-center mb-2 flex-wrap"><span class="bg-blue-900/50 text-blue-300 border border-blue-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${comp}</span><span class="bg-indigo-900/50 text-indigo-300 border border-indigo-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${anoStr}</span><span class="bg-yellow-900/50 text-yellow-300 border border-yellow-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${prof}</span></div><p class="text-white text-sm font-medium leading-relaxed group-hover:text-emerald-200 transition-colors">${enun}</p></div>`; 
         container.appendChild(div); 
     }); 
 };
@@ -101,15 +116,44 @@ window.toggleSelectAllCommunity = function(sourceCheckbox) { const checkboxes = 
 window.cloneCommunitySelected = function() { 
     const checkboxes = document.querySelectorAll('.comm-checkbox:checked'); 
     if (checkboxes.length === 0) { window.showSystemMessage("Aviso", "Selecione pelo menos uma questão para importar.", "info"); return; } 
-    const nativeQs = window.bancoEmbutidoJSONL.trim().split('\n').filter(l => l.trim() && l.trim().startsWith('{')).map(l => JSON.parse(l.trim())); 
+    
+    const nativeQs = window.BANCO_BRUTAO_GLOBAL || []; 
     let current = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []); 
     let added = 0; 
+    
     checkboxes.forEach(cb => { 
         const idx = parseInt(cb.value); const rawQ = nativeQs[idx]; 
         if (rawQ) { 
-            const optMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }; 
+            let anoSeguro = String(rawQ.ano || 'Geral');
+            if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) anoSeguro += 'º Ano';
+            
+            let altA = "", altB = "", altC = "", altD = "";
+            if (Array.isArray(rawQ.alternativas)) {
+                altA = rawQ.alternativas[0] || ""; altB = rawQ.alternativas[1] || ""; altC = rawQ.alternativas[2] || ""; altD = rawQ.alternativas[3] || "";
+            } else if (rawQ.alternativas) {
+                altA = rawQ.alternativas.A || ""; altB = rawQ.alternativas.B || ""; altC = rawQ.alternativas.C || ""; altD = rawQ.alternativas.D || "";
+            }
+
+            let ansIdx = 0;
+            if (rawQ.correta !== undefined && rawQ.correta !== null) ansIdx = parseInt(rawQ.correta);
+            else if (rawQ.gabarito_letra) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[rawQ.gabarito_letra.toUpperCase()] || 0;
+            else if (rawQ.resposta_correta) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[rawQ.resposta_correta.toUpperCase()] || 0;
+
             const newId = `CUST_CLONE_${Date.now()}_${Math.floor(Math.random()*1000)}`; 
-            const questionToAdd = { id: newId, text: rawQ.enunciado, category: `${rawQ.componente} • ${rawQ.ano} • Proficiência: ${rawQ.nivel_proficiencia||'Básico'}`, componente: (rawQ.componente||'').toLowerCase(), ano: (rawQ.ano||'').toLowerCase(), proficiencia: (rawQ.nivel_proficiencia||'Básico').toLowerCase(), options: [rawQ.alternativas.A, rawQ.alternativas.B, rawQ.alternativas.C, rawQ.alternativas.D], answer: optMap[rawQ.resposta_correta], explicacao: rawQ.explicacao||"", image_url: rawQ.image_url||null, bncc: rawQ.bncc||"N/A", isCustom: true }; 
+            const questionToAdd = { 
+                id: newId, 
+                text: rawQ.pergunta || rawQ.enunciado, 
+                category: `${rawQ.disciplina || rawQ.componente} • ${anoSeguro} • Proficiência: ${rawQ.nivel || rawQ.nivel_proficiencia||'Básico'}`, 
+                componente: String(rawQ.disciplina || rawQ.componente||'').toLowerCase(), 
+                ano: anoSeguro.toLowerCase(), 
+                proficiencia: String(rawQ.nivel || rawQ.nivel_proficiencia||'Básico').toLowerCase(), 
+                options: [altA, altB, altC, altD], 
+                answer: ansIdx, 
+                explicacao: rawQ.justificativa_gabarito || rawQ.explicacao||"", 
+                image_url: rawQ.imagem || rawQ.image_url||null, 
+                bncc: rawQ.habilidade_bncc_codigo_referencial || rawQ.bncc||"N/A", 
+                isCustom: true 
+            }; 
             current.push(questionToAdd); added++; 
         } 
     }); 
