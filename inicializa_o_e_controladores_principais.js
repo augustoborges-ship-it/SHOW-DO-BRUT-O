@@ -4,13 +4,13 @@
 // Arquitetura: Event Delegation Global (Blindagem contra quebras de DOM)
 // =========================================================================
 
-window.PIN_ACESSO_PRO = "1234"; // CORREÇÃO: Variável ativada!
+window.PIN_ACESSO_PRO = "1234";
 window.dificuldadeModoTreino = "fácil";
 window.questoesDaPartida = [];
 window.indiceQuestaoAtual = 0;
 window.EVENT_DELEGATION_MOUNTED = false;
 
-// TRADUTOR DO BANCO GIGANTE (Mapeia o JSON para o Motor)
+// TRADUTOR DO BANCO GIGANTE (Mapeia o JSON para o Motor e Memória Global)
 window.initGameData = function() {
     console.log("[Core-Init] Mapeando Banco Global e Customizado...");
     
@@ -29,15 +29,22 @@ window.initGameData = function() {
                 document.head.appendChild(s); 
             }
             return; 
-        } catch(e) {}
+        } catch(e) {
+            console.error("Erro ao decodificar Link Mágico:", e);
+        }
     }
 
     try {
+        // Inicializa as Turmas, se a função existir
         if (typeof window.initTurmasData === 'function') window.initTurmasData();
         
         var rawBank = window.BANCO_BRUTAO_GLOBAL || [];
         
-        // Tradutor Universal (Resolve a divergência entre os JSONs)
+        if (rawBank.length === 0) {
+            console.warn("[Core-Init] ALERTA: window.BANCO_BRUTAO_GLOBAL está vazio ou não foi carregado. Verifique o arquivo motor_do_banco_de_questoes.js.");
+        }
+
+        // Tradutor Universal (Resolve a divergência entre os JSONs e popula a memória)
         var globalQuestionsParsed = rawBank.map(function(q, index) {
             var anoSeguro = String(q.ano || 'Geral');
             if (anoSeguro !== 'Geral' && anoSeguro.toLowerCase().indexOf('ano') === -1) {
@@ -74,12 +81,16 @@ window.initGameData = function() {
             }; 
         });
 
+        // Carrega questões customizadas do professor, se houver
         var customQuestions = [];
         if (typeof window.readJSONKey === 'function' && window.STORAGE_KEYS) {
             customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
         }
+
+        // --- PONTO CRÍTICO: POPULA A MEMÓRIA GLOBAL DO JOGO ---
         window.allQuestions = globalQuestionsParsed.concat(customQuestions);
-        console.log("[Core-Init] Total de " + window.allQuestions.length + " questões prontas.");
+        console.log("[Core-Init] Total de " + window.allQuestions.length + " questões injetadas em window.allQuestions.");
+
     } catch (e) {
         console.error("[Core-Init] Falha fatal ao inicializar banco:", e);
     }
@@ -91,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     console.log("[Core-DOM] Módulo Blindado de Interface carregado.");
     
-    // Dispara a leitura do banco imediatamente
+    // Dispara a leitura do banco imediatamente ao carregar a página
     if (typeof window.initGameData === 'function') window.initGameData();
 
     // DELEGAÇÃO GLOBAL DE EVENTOS (À prova de falhas de renderização de Modais)
@@ -106,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // ========================================================
         if (textoBotao === "DESBLOQUEAR") {
             e.preventDefault();
-            e.stopPropagation(); // Trava outros eventos fantasma
+            e.stopPropagation();
 
             var modal = btn.closest('.fixed') || btn.closest('.absolute') || btn.parentElement.parentElement;
             var inputSenha = modal ? modal.querySelector('input') : null;
@@ -121,6 +132,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Abre o painel
                 if (typeof window.enterProfDashboard === 'function') {
                     window.enterProfDashboard();
+                } else {
+                    console.error("Função enterProfDashboard não encontrada.");
                 }
             } else {
                 // Efeito Tremor de Erro (Tailwind)
@@ -140,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function() {
             e.preventDefault();
             var containerModoTreino = btn.parentElement;
             
-            // Garante que é o grupo de botões de Dificuldade
+            // Garante que é o grupo de botões de Dificuldade, e não outros botões do jogo
             if (containerModoTreino && containerModoTreino.innerText.toUpperCase().indexOf("FÁCIL") !== -1) {
                 var todosOsIrmaos = containerModoTreino.querySelectorAll('button');
                 for (var j = 0; j < todosOsIrmaos.length; j++) {
@@ -160,7 +173,17 @@ document.addEventListener("DOMContentLoaded", function() {
         // ========================================================
         else if (textoBotao === "JOGAR AGORA") {
             e.preventDefault();
-            e.stopPropagation(); // Desliga a chamada inline do HTML para evitar execução dupla
+            e.stopPropagation();
+
+            // Evita crash se o banco estiver vazio
+            if (!window.allQuestions || window.allQuestions.length === 0) {
+                 if (typeof window.showSystemMessage === 'function') {
+                     window.showSystemMessage("Erro Crítico", "O banco de questões não carregou. Verifique o arquivo motor_do_banco_de_questoes.js", "error");
+                 } else {
+                     alert("Erro Crítico: Banco Vazio.");
+                 }
+                 return;
+            }
 
             var container = btn.closest('.screen') || btn.closest('.fixed') || btn.closest('.absolute') || document;
             var selects = container.querySelectorAll('select');
