@@ -106645,5 +106645,4 @@ window.BANCO_BRUTAO_GLOBAL = [
         "lote 20"
       ]
     }
-  ]
-}
+];
