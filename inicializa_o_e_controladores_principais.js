@@ -3,21 +3,23 @@
 // Função: Eventos de inicialização, DOMContentLoaded e Conexão UI -> Motor
 // =========================================================================
 
-/* STREAMING_CHUNK:Configurando ambiente blindado... */
+console.log("🚀 [SISTEMA] inicializa_o_e_controladores_principais.js carregado com sucesso.");
+
+/* STREAMING_CHUNK:Configurando escopo global e variáveis... */
 window.PIN_ACESSO_PRO = "1234";
 window.dificuldadeModoTreino = "fácil";
-window.bancoOriginal = [];
 
-/* STREAMING_CHUNK:Validação PRO com injeção forçada de Modais... */
+/* STREAMING_CHUNK:Acesso PRO Indestrutível... */
 window.authProf = function(e) {
     if(e) { e.preventDefault(); e.stopPropagation(); }
-    
     var inputSenha = document.getElementById('prof-pin-input') || document.querySelector('#modal-prof-login input');
     
     if (!inputSenha) {
-        var todosInputs = document.querySelectorAll('input');
-        for(var k=0; k<todosInputs.length; k++) {
-            if(todosInputs[k].closest('.fixed')) { inputSenha = todosInputs[k]; break; }
+        var modais = document.querySelectorAll('.fixed');
+        for(var i=0; i<modais.length; i++) {
+            if(modais[i].innerText.indexOf('ACESSO RESTRITO') !== -1 || modais[i].innerText.indexOf('PIN') !== -1) {
+                inputSenha = modais[i].querySelector('input'); break;
+            }
         }
     }
     
@@ -32,41 +34,19 @@ window.authProf = function(e) {
     }
 };
 
-/* STREAMING_CHUNK:Mapeando banco de dados 100% livre de Cache... */
+/* STREAMING_CHUNK:Conversor Universal do Banco de Questões... */
 window.initGameData = function() {
-    console.log("[Core-Init] Reset de Fábrica: Limpando Cache e Lendo o Banco Global...");
-    
+    console.log("⚙️ [Core] Convertendo o Banco de 7MB para o Jogo...");
     try {
         if(typeof window.initTurmasData === 'function') window.initTurmasData();
-
         var rawBank = window.BANCO_BRUTAO_GLOBAL;
         
-        // Se o Javascript travar lendo o arquivo, essa vacina entra em ação.
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
-            console.warn("ALERTA DE SISTEMA: O navegador abortou a leitura do arquivo de 7MB. Ativando Modo Fênix.");
-            rawBank = [
-                {
-                    "id": "EMERGENCIA_F", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
-                    "pergunta": "O seu arquivo motor_do_banco_de_questoes.js tem um erro de digitação. Quanto é 1+1?",
-                    "alternativas": ["1", "2", "3", "4"], "correta": 1, "justificativa_gabarito": "2."
-                },
-                {
-                    "id": "EMERGENCIA_M", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Intermediário",
-                    "pergunta": "O arquivo corrompido cancelou o carregamento de todas as questões. Quanto é 5x5?",
-                    "alternativas": ["10", "15", "25", "30"], "correta": 2, "justificativa_gabarito": "25."
-                },
-                {
-                    "id": "EMERGENCIA_D", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Avançado",
-                    "pergunta": "Descubra qual linha do seu JSON de 7MB está com erro. Qual a raiz de 100?",
-                    "alternativas": ["5", "8", "10", "12"], "correta": 2, "justificativa_gabarito": "10."
-                }
-            ];
-            // Replica as 3 questões até dar 16 (limite do jogo)
-            var b = []; for(let i=0; i<6; i++) { b = b.concat(rawBank); }
-            rawBank = b;
+            console.error("🚨 ERRO: O arquivo motor_do_banco_de_questoes.js não carregou ou está vazio.");
+            return;
         }
 
-        const globalQuestionsParsed = rawBank.map((q, index) => { 
+        window.allQuestions = rawBank.map((q, index) => { 
             let anoSeguro = String(q.ano || 'Geral');
             if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) anoSeguro += 'º Ano';
 
@@ -80,31 +60,52 @@ window.initGameData = function() {
             }
 
             let ansIdx = 0;
-            if (q.correta !== undefined && q.correta !== null) ansIdx = parseInt(q.correta);
-            else if (q.gabarito_letra) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[String(q.gabarito_letra).toUpperCase()] || 0;
+            if (q.correta !== undefined && q.correta !== null) {
+                ansIdx = parseInt(q.correta);
+                if (isNaN(ansIdx)) ansIdx = 0;
+            } else if (q.gabarito_letra) {
+                ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[String(q.gabarito_letra).toUpperCase()] || 0;
+            } else if (q.resposta_correta) {
+                ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[String(q.resposta_correta).toUpperCase()] || 0;
+            }
 
             let comp = String(q.disciplina || q.componente || 'Geral');
-            let prof = String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico');
+            let profRaw = String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico');
+            let tagsRaw = Array.isArray(q.tags) ? q.tags.join(" ") : "";
+            let profCompleta = (profRaw + " " + tagsRaw).toLowerCase();
 
             return { 
-                id: String(q.id || `GLOBAL_${index}`), text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
-                category: `${comp} • ${anoSeguro} • Proficiência: ${prof}`, 
-                componente: comp.toLowerCase(), ano: anoSeguro.toLowerCase(), proficiencia: prof.toLowerCase(), 
-                options: [altA, altB, altC, altD], answer: ansIdx, explicacao: String(q.justificativa_gabarito || ""), 
-                image_url: q.imagem || null, bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), isCustom: false 
+                id: String(q.id || `GLOBAL_${index}`), 
+                text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
+                category: `${comp} • ${anoSeguro} • Proficiência: ${profRaw}`, 
+                componente: comp.toLowerCase(), 
+                ano: anoSeguro.toLowerCase(), 
+                proficiencia: profCompleta, 
+                options: [altA, altB, altC, altD], 
+                answer: ansIdx, 
+                explicacao: String(q.justificativa_gabarito || q.feedback_correto || ""), 
+                image_url: q.imagem || q.image_url || null, 
+                bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), 
+                isCustom: false 
             }; 
         });
 
-        window.allQuestions = globalQuestionsParsed;
-        console.log(`✅ [Core-Init] FORÇA BRUTA: ${window.allQuestions.length} questões injetadas em RAM!`);
+        var customQuestions = [];
+        if (typeof window.readJSONKey === 'function' && window.STORAGE_KEYS) {
+            customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
+        }
+        window.allQuestions = window.allQuestions.concat(customQuestions);
+        console.log(`✅ [Core] SUCESSO: ${window.allQuestions.length} questões mapeadas e prontas para uso!`);
     } catch (e) {
-        console.error("Erro fatal no initGameData:", e);
+        console.error("🚨 Falha fatal ao converter questões:", e);
     }
 };
 
-/* STREAMING_CHUNK:Ouvintes de Cliques Anti-Zombie (Event Delegation Absoluta)... */
+/* STREAMING_CHUNK:Gatilhos Globais de Prevenção de Erros de HTML... */
 document.addEventListener("DOMContentLoaded", function() {
-    if (typeof window.initGameData === 'function') window.initGameData();
+    setTimeout(function() {
+        if (typeof window.initGameData === 'function') window.initGameData();
+    }, 500); 
 
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('button');
@@ -114,8 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (txt === "DESBLOQUEAR") {
             e.preventDefault(); e.stopPropagation();
             if(typeof window.authProf === 'function') window.authProf(e);
-        } 
-        else if (txt === "FÁCIL" || txt === "MÉDIO" || txt === "DIFÍCIL") {
+        } else if (txt === "FÁCIL" || txt === "MÉDIO" || txt === "DIFÍCIL") {
             e.preventDefault(); e.stopPropagation();
             window.dificuldadeModoTreino = txt.toLowerCase();
             var irmaos = btn.parentElement.querySelectorAll('button');
@@ -125,21 +125,21 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             btn.classList.remove('bg-transparent', 'border-gray-600');
             btn.classList.add('bg-blue-600', 'border-blue-400');
-        } 
-        else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
+        } else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
             e.preventDefault(); e.stopPropagation();
             
-            // Força a recarga do banco antes de iniciar se der tela preta
-            if(!window.allQuestions || window.allQuestions.length === 0) window.initGameData();
+            if(!window.allQuestions || window.allQuestions.length === 0) {
+                if(typeof window.initGameData === 'function') window.initGameData();
+            }
 
             var isStudentScreen = btn.closest('#screen-setup-student') || document.querySelector('#screen-setup-student.active') || document.querySelector('.screen.active');
             
-            if (isStudentScreen && typeof window.startStudentGame === 'function') {
-                window.startStudentGame();
-            } else if (typeof window.startGame === 'function') {
-                window.startGame();
+            if (isStudentScreen) {
+                if (typeof window.startStudentGame === 'function') window.startStudentGame();
+                else alert("Erro: O arquivo logica_e_core_do_jogo.js não carregou. Recarregue a página.");
             } else {
-                alert("O sistema falhou ao inicializar as regras do jogo. Feche essa aba e abra de novo (CTRL+F5).");
+                if (typeof window.startGame === 'function') window.startGame();
+                else alert("Erro: O arquivo logica_e_core_do_jogo.js não carregou. Recarregue a página.");
             }
         }
     }, true);

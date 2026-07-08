@@ -1,7 +1,7 @@
 ---
 
-### ARQUIVO 2: O Cérebro do Jogo (Substitua todo o conteúdo)
-Abra o arquivo **`logica_e_core_do_jogo.js`**, apague tudo e cole este código completo. Eu retirei todas as dependências frágeis. A partir de agora, se o jogador quiser iniciar o modo Treino e algo falhar na filtragem, o jogo misturará as questões sozinho e abrirá a tela sem perguntar nada.
+### ARQUIVO 2: O Cérebro do Jogo (Acaba com o alerta "Banco Vazio")
+Abra o arquivo **`logica_e_core_do_jogo.js`**, apague **TUDO** e cole o código abaixo. Ele possui o Filtro Absoluto: se ele não achar "Fácil", ele busca a disciplina. Se não achar, ele joga o banco todo. O jogo **sempre** vai abrir.
 
 ```javascript:logica_e_core_do_jogo.js
 // =========================================================================
@@ -9,7 +9,9 @@ Abra o arquivo **`logica_e_core_do_jogo.js`**, apague tudo e cole este código c
 // Função: Motor principal de partida, regras, validações e progressão
 // =========================================================================
 
-/* STREAMING_CHUNK:Globais e sistema de State... */
+console.log("🚀 [SISTEMA] logica_e_core_do_jogo.js carregado com sucesso.");
+
+/* STREAMING_CHUNK:Inicializando globais e salvamento... */
 window.saveProgress = function() { 
     if (!window.activeQuestions || !window.activeQuestions.length || !window.teams || !window.teams.length) return; 
     window.writeJSONKey(window.STORAGE_KEYS.state, { 
@@ -58,11 +60,10 @@ window.recordAnswerSnapshot = function(question, selectedIndex, wasCorrect, team
     window.saveProgress(); 
 };
 
-/* STREAMING_CHUNK:Gatilhos Multiplayer e Singleplayer... */
+/* STREAMING_CHUNK:Gatilho do Modo Multiplayer (Professor)... */
 window.startGame = function() {
     window.clearProgress(); window.isStudentMode = false; 
     const errDiv = window.el('setup-error-msg'); if(errDiv) errDiv.remove();
-    const showError = (msg) => { const e = window.ce('div'); e.id = 'setup-error-msg'; e.className = 'mt-4 bg-red-900/80 border-2 border-red-500 text-white font-bold p-4 rounded-xl text-center shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'; e.innerText = msg; const actionArea = window.el('setup-action-area'); if(actionArea) actionArea.prepend(e); };
     
     let selectedYears = Array.from(window.qsa('#screen-setup input[id^="ano"]:checked')).map(cb => cb.value.toLowerCase()); 
     let selectedMundos = Array.from(window.qsa('#screen-setup input[id^="mundo"]:checked')).map(cb => cb.value.toLowerCase()); 
@@ -90,7 +91,7 @@ window.startGame = function() {
     window.fireUpGame();
 };
 
-/* STREAMING_CHUNK:O Motor de Partida Blindado contra Bancos Vazios... */
+/* STREAMING_CHUNK:Motor Absoluto do Modo Treino (Filtro e Interface)... */
 window.startStudentGame = function() {
     window.clearProgress(); window.isStudentMode = true; 
     
@@ -110,10 +111,12 @@ window.startStudentGame = function() {
     else if (selects.length === 1) { anoEscolar = selects[0].value; }
     
     var difSelecionada = window.dificuldadeModoTreino || "fácil";
-    var tagsAceitas = ["básico"];
+    
+    // TODAS as taxonomias do Saeb e BNCC suportadas no filtro:
+    var tagsAceitas = [];
     if (difSelecionada === "fácil") tagsAceitas = ["básico", "b1", "b2", "fácil", "baixo"];
-    else if (difSelecionada === "médio") tagsAceitas = ["intermediário", "b3", "b4", "médio", "adequado"];
-    else if (difSelecionada === "difícil") tagsAceitas = ["avançado", "b5", "b6", "difícil", "alto"];
+    else if (difSelecionada === "médio") tagsAceitas = ["intermediário", "b3", "b4", "médio", "adequado", "a1", "a2"];
+    else if (difSelecionada === "difícil") tagsAceitas = ["avançado", "b5", "b6", "difícil", "alto", "a3"];
 
     var numAnoBusca = String(anoEscolar).replace(/\D/g, "");
 
@@ -121,36 +124,37 @@ window.startStudentGame = function() {
         if(typeof window.initGameData === 'function') window.initGameData();
     }
 
-    // FASE 1: Filtragem Rigorosa
+    // Filtro OMNI-DIRECIONAL (Busca em todas as tags do seu arquivo de 7MB)
     window.questoesDaPartida = window.allQuestions.filter(function(q) {
-        var qAno = String(q.ano || "").toLowerCase();
-        var qComp = String(q.componente || q.disciplina || "").toLowerCase();
-        var qNiv = String(q.proficiencia || q.nivel_proficiencia || q.nivel || "").toLowerCase();
+        var qAno = q.ano;
+        var qComp = q.componente;
+        var qProf = q.proficiencia; 
+
         var bateAno = qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca;
         var bateDisc = qComp.includes(String(disc).toLowerCase());
+        
         var bateDificuldade = false;
         for (var x = 0; x < tagsAceitas.length; x++) {
-            if (qNiv.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
+            if (qProf.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
         }
         return bateAno && bateDisc && bateDificuldade;
     });
 
-    // FASE 2: Tolerância de Falha (Se não achou a dificuldade, ignora a dificuldade)
+    // SISTEMA ANTI-TELA PRETA: Se o filtro rigoroso falhar, procura SÓ pela disciplina e ano.
     if (window.questoesDaPartida.length === 0) {
         window.questoesDaPartida = window.allQuestions.filter(function(q) {
-            var qAno = String(q.ano || "").toLowerCase();
-            var qComp = String(q.componente || q.disciplina || "").toLowerCase();
+            var qAno = q.ano; var qComp = q.componente;
             return (qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca) && qComp.includes(String(disc).toLowerCase());
         });
         
-        // FASE 3: O Botão do Pânico (Se ainda der zero, joga TUDO que tiver no banco pra não travar a tela)
+        // PÂNICO TOTAL: Se a disciplina não for encontrada, injeta O BANCO INTEIRO!
         if (window.questoesDaPartida.length === 0) {
             console.warn("Filtro total falhou. Carregando o banco global massivo.");
             window.questoesDaPartida = [...window.allQuestions];
         }
     }
 
-    // Embaralhador Rápido de Questões
+    // Embaralha as questões sorteadas
     for (var r = window.questoesDaPartida.length - 1; r > 0; r--) {
         var s = Math.floor(Math.random() * (r + 1));
         var aux = window.questoesDaPartida[r];
@@ -161,7 +165,6 @@ window.startStudentGame = function() {
     window.teams = [{ name: pName, level: 0, status: 'playing', helps: { eliminar: false, palpite: false, dica: false, pular: 0 }, turmaId: null, students: [], responseTimes: [] }];
     window.gameMode = 'single'; window.currentTeamIndex = 0;
     
-    // Telemetria (Log)
     if (window.STORAGE_KEYS && typeof window.readJSONKey === 'function' && typeof window.writeJSONKey === 'function') {
         var todayStr = new Date().toISOString().split('T')[0]; 
         window.currentStudentTelemetryKey = pName.toLowerCase() + "_" + todayStr;
@@ -171,7 +174,6 @@ window.startStudentGame = function() {
         window.writeJSONKey(window.STORAGE_KEYS.telemetry, telemetry);
     }
 
-    // Separa as 16 balas da pistola
     window.activeQuestions = [];
     while(window.activeQuestions.length < 16 && window.questoesDaPartida.length > 0) {
         for(let q of window.questoesDaPartida) {
@@ -180,19 +182,16 @@ window.startStudentGame = function() {
     }
     window.globalQuestionIndex = 0;
 
-    // Remove as telas de menu ativas
     var telas = document.querySelectorAll('.screen');
     for(var t = 0; t < telas.length; t++) telas[t].classList.remove('active');
     
     var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
     if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
     
-    // Gatilho final
     if (typeof window.fireUpGame === 'function') window.fireUpGame();
-    else if (typeof window.loadQuestion === 'function') window.loadQuestion();
 };
 
-/* STREAMING_CHUNK:Disparo de Transições de Tela... */
+/* STREAMING_CHUNK:Inicializando Visualizações e Áudio... */
 window.fireUpGame = function() {
     const hudTeam = window.el('hud-team');
     if(hudTeam) hudTeam.style.display = window.gameMode === 'multi' ? 'flex' : 'none'; 
@@ -206,7 +205,7 @@ window.fireUpGame = function() {
     if(typeof window.loadQuestion === 'function') window.loadQuestion(); 
 };
 
-/* STREAMING_CHUNK:Lógica Intocável do Apresentador e HUD... */
+/* STREAMING_CHUNK:O Motor de Renderização de Questão na Tela... */
 window.loadQuestion = function() {
     window.isWaitingAnswer = false; 
     const team = window.teams[window.currentTeamIndex]; 
@@ -231,8 +230,8 @@ window.loadQuestion = function() {
     let profDisplay = (q.proficiencia || '').toUpperCase(); 
     let prof = q.proficiencia ? q.proficiencia.toLowerCase() : '';
     if (prof.includes('básico') || prof.includes('fácil') || prof.includes('baixo')) { profColor = 'text-orange-400 drop-shadow-md'; profDisplay = 'BÁSICO'; } 
-    else if (prof.includes('adequado') || prof.includes('médio')) { profColor = 'text-green-400 drop-shadow-md'; profDisplay = 'ADEQUADO'; } 
-    else if (prof.includes('avançado') || prof.includes('difícil')) { profColor = 'text-blue-400 drop-shadow-md'; profDisplay = 'AVANÇADO'; }
+    else if (prof.includes('adequado') || prof.includes('médio') || prof.includes('a1') || prof.includes('a2')) { profColor = 'text-green-400 drop-shadow-md'; profDisplay = 'ADEQUADO'; } 
+    else if (prof.includes('avançado') || prof.includes('difícil') || prof.includes('a3')) { profColor = 'text-blue-400 drop-shadow-md'; profDisplay = 'AVANÇADO'; }
     
     window.el('q-category').innerHTML = `${(q.componente || '').toUpperCase()} &bull; ${(q.ano || '').toUpperCase()} &bull; PROFICIÊNCIA: <span class="${profColor}">${profDisplay}</span>`; 
     
