@@ -1,9 +1,10 @@
 // =========================================================================
 // Arquivo: inicializa_o_e_controladores_principais.js
-// Função: Eventos de inicialização, DOMContentLoaded e Conexão UI -> Motor
+// Função: Eventos de inicialização, DOMContentLoaded e Motor Unificado
+// Arquitetura: Fuso Horário Único (Sem dependências externas para iniciar)
 // =========================================================================
 
-console.log("🚀 [SISTEMA] inicializa_o_e_controladores_principais.js carregado com sucesso.");
+console.log("🚀 [SISTEMA] inicializa_o_e_controladores_principais.js carregado.");
 
 /* STREAMING_CHUNK:Configurando escopo global e variáveis... */
 window.PIN_ACESSO_PRO = "1234";
@@ -43,7 +44,13 @@ window.initGameData = function() {
         
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
             console.error("🚨 ERRO: O arquivo motor_do_banco_de_questoes.js não carregou ou está vazio.");
-            return;
+            // Injeta as de sobrevivência silenciosamente para não travar
+            rawBank = [{
+                "id": "EMERGENCIA_TOTAL", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
+                "pergunta": "O SEU ARQUIVO motor_do_banco_de_questoes.js ESTÁ COM UM ERRO DE SINTAXE. O Javascript não conseguiu ler as 2.000 questões. Quanto é 2 + 2?",
+                "alternativas": ["1", "2", "4", "8"], "correta": 2, "justificativa_gabarito": "Resolva o erro no JSON."
+            }];
+            let tmp = []; for(let i=0; i<16; i++) tmp = tmp.concat(rawBank); rawBank = tmp;
         }
 
         window.allQuestions = rawBank.map((q, index) => { 
@@ -101,6 +108,105 @@ window.initGameData = function() {
     }
 };
 
+/* STREAMING_CHUNK:LÓGICA CONSOLIDADA: O Início do Modo Treino (Blindagem Final)... */
+// Sugando a função de início para dentro deste arquivo. Assim, ela nunca vai faltar!
+window.startStudentGameSafe = function() {
+    console.log("🚦 [Treino] Iniciando Preparativos...");
+    if(typeof window.clearProgress === 'function') window.clearProgress(); 
+    window.isStudentMode = true; 
+    
+    var container = document.getElementById('screen-setup-student') || document.querySelector('.screen.active') || document;
+    var selects = container.querySelectorAll('select');
+    var inputsText = container.querySelectorAll('input[type="text"]');
+    
+    var pName = "Herói Anônimo";
+    for (var k = 0; k < inputsText.length; k++) {
+        if (inputsText[k].placeholder && inputsText[k].placeholder.toLowerCase().indexOf('nome') !== -1 && inputsText[k].value.trim() !== "") {
+            pName = inputsText[k].value.trim(); break;
+        }
+    }
+    
+    var anoEscolar = "5º Ano"; var disc = "Matemática";
+    if (selects.length >= 2) { anoEscolar = selects[0].value; disc = selects[1].value; } 
+    else if (selects.length === 1) { anoEscolar = selects[0].value; }
+    
+    var difSelecionada = window.dificuldadeModoTreino || "fácil";
+    var tagsAceitas = [];
+    if (difSelecionada === "fácil") tagsAceitas = ["básico", "b1", "b2", "fácil", "baixo"];
+    else if (difSelecionada === "médio") tagsAceitas = ["intermediário", "b3", "b4", "médio", "adequado", "a1", "a2"];
+    else if (difSelecionada === "difícil") tagsAceitas = ["avançado", "b5", "b6", "difícil", "alto", "a3"];
+
+    var numAnoBusca = String(anoEscolar).replace(/\D/g, "");
+
+    // Garante que o banco exista! Se estiver vazio, tenta ler novamente.
+    if(!window.allQuestions || window.allQuestions.length === 0) {
+        window.initGameData();
+    }
+
+    // Filtro OMNI-DIRECIONAL 
+    window.questoesDaPartida = window.allQuestions.filter(function(q) {
+        var qAno = q.ano; var qComp = q.componente; var qProf = q.proficiencia; 
+        var bateAno = qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca;
+        var bateDisc = qComp.includes(String(disc).toLowerCase());
+        var bateDificuldade = false;
+        for (var x = 0; x < tagsAceitas.length; x++) {
+            if (qProf.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
+        }
+        return bateAno && bateDisc && bateDificuldade;
+    });
+
+    // SISTEMA ANTI-TELA PRETA: Ignora Dificuldade
+    if (window.questoesDaPartida.length === 0) {
+        window.questoesDaPartida = window.allQuestions.filter(function(q) {
+            var qAno = q.ano; var qComp = q.componente;
+            return (qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca) && qComp.includes(String(disc).toLowerCase());
+        });
+        
+        // PÂNICO TOTAL: Injeta TUDO
+        if (window.questoesDaPartida.length === 0) {
+            console.warn("⚠️ Filtro não encontrou nada. Carregando o banco global massivo.");
+            window.questoesDaPartida = [...window.allQuestions];
+        }
+    }
+
+    // Embaralha as questões sorteadas
+    for (var r = window.questoesDaPartida.length - 1; r > 0; r--) {
+        var s = Math.floor(Math.random() * (r + 1));
+        var aux = window.questoesDaPartida[r];
+        window.questoesDaPartida[r] = window.questoesDaPartida[s];
+        window.questoesDaPartida[s] = aux;
+    }
+
+    window.teams = [{ name: pName, level: 0, status: 'playing', helps: { eliminar: false, palpite: false, dica: false, pular: 0 }, turmaId: null, students: [], responseTimes: [] }];
+    window.gameMode = 'single'; window.currentTeamIndex = 0;
+    
+    if (window.STORAGE_KEYS && typeof window.readJSONKey === 'function' && typeof window.writeJSONKey === 'function') {
+        var todayStr = new Date().toISOString().split('T')[0]; 
+        window.currentStudentTelemetryKey = pName.toLowerCase() + "_" + todayStr;
+        var telemetry = window.readJSONKey(window.STORAGE_KEYS.telemetry, {}); 
+        if (!telemetry[window.currentStudentTelemetryKey]) { telemetry[window.currentStudentTelemetryKey] = { attempts: 0, sent: false }; } 
+        telemetry[window.currentStudentTelemetryKey].attempts++; 
+        window.writeJSONKey(window.STORAGE_KEYS.telemetry, telemetry);
+    }
+
+    window.activeQuestions = [];
+    while(window.activeQuestions.length < 16 && window.questoesDaPartida.length > 0) {
+        for(let q of window.questoesDaPartida) {
+            if(window.activeQuestions.length < 16) window.activeQuestions.push(q);
+        }
+    }
+    window.globalQuestionIndex = 0;
+
+    var telas = document.querySelectorAll('.screen');
+    for(var t = 0; t < telas.length; t++) telas[t].classList.remove('active');
+    
+    var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
+    if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
+    
+    console.log("🎯 [Treino] Disparando FireUpGame...");
+    if (typeof window.fireUpGame === 'function') window.fireUpGame();
+};
+
 /* STREAMING_CHUNK:Gatilhos Globais de Prevenção de Erros de HTML... */
 document.addEventListener("DOMContentLoaded", function() {
     setTimeout(function() {
@@ -128,18 +234,14 @@ document.addEventListener("DOMContentLoaded", function() {
         } else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
             e.preventDefault(); e.stopPropagation();
             
-            if(!window.allQuestions || window.allQuestions.length === 0) {
-                if(typeof window.initGameData === 'function') window.initGameData();
-            }
-
             var isStudentScreen = btn.closest('#screen-setup-student') || document.querySelector('#screen-setup-student.active') || document.querySelector('.screen.active');
             
             if (isStudentScreen) {
-                if (typeof window.startStudentGame === 'function') window.startStudentGame();
-                else alert("Erro: O arquivo logica_e_core_do_jogo.js não carregou. Recarregue a página.");
+                // CHAMA A NOVA FUNÇÃO BLINDADA QUE ACABAMOS DE CRIAR!
+                window.startStudentGameSafe();
             } else {
                 if (typeof window.startGame === 'function') window.startGame();
-                else alert("Erro: O arquivo logica_e_core_do_jogo.js não carregou. Recarregue a página.");
+                else alert("Erro: O arquivo logica_e_core_do_jogo.js está quebrado ou vazio.");
             }
         }
     }, true);
