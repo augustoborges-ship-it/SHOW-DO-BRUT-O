@@ -1,14 +1,16 @@
 // =========================================================================
 // Arquivo: inicializa_o_e_controladores_principais.js
-// Função: Gatilhos, Leitura de Banco e Início do Jogo
+// Função: Eventos de inicialização, DOMContentLoaded e Motor Unificado
+// Arquitetura: Fuso Horário Único (Sem dependências externas para iniciar)
 // =========================================================================
 
-console.log("🚀 [Core] Inicializador ativado.");
+console.log("🚀 [SISTEMA] inicializa_o_e_controladores_principais.js carregado.");
 
-/* STREAMING_CHUNK:Variaveis e Acesso PRO... */
+/* STREAMING_CHUNK:Configurando escopo global e variáveis... */
 window.PIN_ACESSO_PRO = "1234";
 window.dificuldadeModoTreino = "fácil";
 
+/* STREAMING_CHUNK:Acesso PRO Indestrutível... */
 window.authProf = function(e) {
     if(e) { e.preventDefault(); e.stopPropagation(); }
     var inputSenha = document.getElementById('prof-pin-input') || document.querySelector('#modal-prof-login input');
@@ -33,26 +35,33 @@ window.authProf = function(e) {
     }
 };
 
-/* STREAMING_CHUNK:Conversor Limpo do Banco... */
+/* STREAMING_CHUNK:Conversor Universal do Banco de Questões (Isolamento de Estado)... */
 window.initGameData = function() {
-    console.log("⚙️ [Core] Lendo o Banco de Questões...");
+    console.log("⚙️ [Core] Convertendo o Banco de Questões para o Jogo...");
     try {
         if(typeof window.initTurmasData === 'function') window.initTurmasData();
         var rawBank = window.BANCO_BRUTAO_GLOBAL;
         
-        // Se o arquivo de 7MB der erro de vírgula, essa proteção salva o jogo
+        // SISTEMA DE SOBREVIVÊNCIA DE FALHA DE ARQUIVO
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
-            console.error("🚨 ERRO: window.BANCO_BRUTAO_GLOBAL vazio. Verifique a sintaxe do arquivo de questões.");
+            console.error("🚨 ERRO: O arquivo motor_do_banco_de_questoes.js não carregou ou está vazio devido a erro de sintaxe.");
+            // Cria um banco falso robusto de 32 questões para o jogo nunca travar e permitir testar a UI
             rawBank = [];
-            for (let i = 0; i < 16; i++) {
+            for (let i = 0; i < 32; i++) {
                 rawBank.push({
-                    "id": "EMERGENCIA_" + i, "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
+                    "id": "EMERGENCIA_" + i,
+                    "disciplina": "Matemática",
+                    "ano": "5º Ano",
+                    "nivel": (i % 3 === 0) ? "Básico" : ((i % 3 === 1) ? "Intermediário" : "Avançado"),
                     "pergunta": `🚨 MODO DE SOBREVIVÊNCIA 🚨 O seu arquivo 'motor_do_banco_de_questoes.js' falhou. Questão Falsa ${i+1}. Quanto é 2 + 2?`,
-                    "alternativas": ["1", "2", "4", "8"], "correta": 2, "justificativa_gabarito": "Se viu isso, corrija seu JSON."
+                    "alternativas": ["1", "2", "4", "8"],
+                    "correta": 2,
+                    "justificativa_gabarito": "Este é um fallback automático. O seu JSON original possui algum erro fatal de digitação (vírgulas ou chaves)."
                 });
             }
         }
 
+        // Mapeador Otimizado e Flexível
         window.allQuestions = rawBank.map((q, index) => { 
             let anoSeguro = String(q.ano || 'Geral');
             if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) anoSeguro += 'º Ano';
@@ -78,14 +87,22 @@ window.initGameData = function() {
 
             let comp = String(q.disciplina || q.componente || 'Geral');
             let profRaw = String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico');
+            let tagsRaw = Array.isArray(q.tags) ? q.tags.join(" ") : "";
+            let profCompleta = (profRaw + " " + tagsRaw).toLowerCase();
 
             return { 
                 id: String(q.id || `GLOBAL_${index}`), 
                 text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
                 category: `${comp} • ${anoSeguro} • Proficiência: ${profRaw}`, 
-                componente: comp.toLowerCase(), ano: anoSeguro.toLowerCase(), proficiencia: profRaw.toLowerCase(), 
-                options: [altA, altB, altC, altD], answer: ansIdx, explicacao: String(q.justificativa_gabarito || q.feedback_correto || ""), 
-                image_url: q.imagem || q.image_url || null, bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), isCustom: false 
+                componente: comp.toLowerCase(), 
+                ano: anoSeguro.toLowerCase(), 
+                proficiencia: profCompleta, 
+                options: [altA, altB, altC, altD], 
+                answer: ansIdx, 
+                explicacao: String(q.justificativa_gabarito || q.feedback_correto || ""), 
+                image_url: q.imagem || q.image_url || null, 
+                bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), 
+                isCustom: false 
             }; 
         });
 
@@ -94,14 +111,15 @@ window.initGameData = function() {
             customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
         }
         window.allQuestions = window.allQuestions.concat(customQuestions);
-        console.log(`✅ [Core] ${window.allQuestions.length} questões na memória!`);
+        console.log(`✅ [Core] SUCESSO: ${window.allQuestions.length} questões mapeadas e injetadas no jogo!`);
     } catch (e) {
-        console.error("🚨 Falha fatal:", e);
+        console.error("🚨 Falha fatal ao converter questões:", e);
     }
 };
 
-/* STREAMING_CHUNK:Lógica Absoluta do Modo Treino... */
+/* STREAMING_CHUNK:LÓGICA CONSOLIDADA: O Início do Modo Treino (Blindagem Final)... */
 window.startStudentGameSafe = function() {
+    console.log("🚦 [Treino] Iniciando Preparativos...");
     if(typeof window.clearProgress === 'function') window.clearProgress(); 
     window.isStudentMode = true; 
     
@@ -128,32 +146,38 @@ window.startStudentGameSafe = function() {
 
     var numAnoBusca = String(anoEscolar).replace(/\D/g, "");
 
-    if(!window.allQuestions || window.allQuestions.length === 0) window.initGameData();
+    // Garante que o banco exista! Se estiver vazio, tenta ler novamente (ou gera o de sobrevivência).
+    if(!window.allQuestions || window.allQuestions.length === 0) {
+        window.initGameData();
+    }
 
-    // Filtro Flexível (Verifica Nível, Disciplina e Ano)
+    // Filtro OMNI-DIRECIONAL (Mais forte e tolerante)
     window.questoesDaPartida = window.allQuestions.filter(function(q) {
-        var bateAno = q.ano.includes(String(anoEscolar).toLowerCase()) || q.ano.includes(numAnoBusca) || q.ano === numAnoBusca;
-        var bateDisc = q.componente.includes(String(disc).toLowerCase());
+        var qAno = q.ano; var qComp = q.componente; var qProf = q.proficiencia; 
+        var bateAno = qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca;
+        var bateDisc = qComp.includes(String(disc).toLowerCase());
         var bateDificuldade = false;
         for (var x = 0; x < tagsAceitas.length; x++) {
-            if (q.proficiencia.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
+            if (qProf.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
         }
         return bateAno && bateDisc && bateDificuldade;
     });
 
-    // SISTEMA ANTI-TELA PRETA: Se faltar questão com esse nível, puxa a matéria toda
+    // SISTEMA ANTI-TELA PRETA 1: Ignora Dificuldade, vai só por disciplina e ano
     if (window.questoesDaPartida.length === 0) {
         window.questoesDaPartida = window.allQuestions.filter(function(q) {
-            return (q.ano.includes(String(anoEscolar).toLowerCase()) || q.ano.includes(numAnoBusca) || q.ano === numAnoBusca) && q.componente.includes(String(disc).toLowerCase());
+            var qAno = q.ano; var qComp = q.componente;
+            return (qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca) && qComp.includes(String(disc).toLowerCase());
         });
         
-        // PÂNICO TOTAL: Se não achar nada da matéria, roda o banco inteiro
+        // SISTEMA ANTI-TELA PRETA 2 (PÂNICO TOTAL): Injeta o banco todo, o jogo VAI RODAR
         if (window.questoesDaPartida.length === 0) {
+            console.warn("⚠️ Filtro de disciplina falhou. Carregando o banco global massivo.");
             window.questoesDaPartida = [...window.allQuestions];
         }
     }
 
-    // Embaralha
+    // Embaralha as questões sorteadas
     for (var r = window.questoesDaPartida.length - 1; r > 0; r--) {
         var s = Math.floor(Math.random() * (r + 1));
         var aux = window.questoesDaPartida[r];
@@ -187,13 +211,18 @@ window.startStudentGameSafe = function() {
     var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
     if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
     
+    console.log("🎯 [Treino] Disparando FireUpGame...");
     if (typeof window.fireUpGame === 'function') window.fireUpGame();
 };
 
-/* STREAMING_CHUNK:Eventos Globais... */
+/* STREAMING_CHUNK:Gatilhos Globais de Prevenção de Erros de HTML (O Protetor Final)... */
 document.addEventListener("DOMContentLoaded", function() {
-    window.initGameData(); // Chama na hora que a página carrega
+    // Retardo mínimo para garantir que os outros scripts gigantes carreguem antes
+    setTimeout(function() {
+        if (typeof window.initGameData === 'function') window.initGameData();
+    }, 600); 
 
+    // O Event Delegation é a última barreira. Ele escuta cliques em TODO o documento e intercepta.
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('button');
         if (!btn) return;
@@ -201,7 +230,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (txt === "DESBLOQUEAR") {
             e.preventDefault(); e.stopPropagation();
-            window.authProf(e);
+            if(typeof window.authProf === 'function') window.authProf(e);
         } else if (txt === "FÁCIL" || txt === "MÉDIO" || txt === "DIFÍCIL") {
             e.preventDefault(); e.stopPropagation();
             window.dificuldadeModoTreino = txt.toLowerCase();
@@ -214,12 +243,16 @@ document.addEventListener("DOMContentLoaded", function() {
             btn.classList.add('bg-blue-600', 'border-blue-400');
         } else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
             e.preventDefault(); e.stopPropagation();
+            
             var isStudentScreen = btn.closest('#screen-setup-student') || document.querySelector('#screen-setup-student.active') || document.querySelector('.screen.active');
             
             if (isStudentScreen) {
+                // Rota do Modo Treino Blindada
                 window.startStudentGameSafe();
             } else {
+                // Rota do Jogo Oficial do Professor
                 if (typeof window.startGame === 'function') window.startGame();
+                else alert("Erro fatal: A lógica principal do jogo não carregou. Recarregue a página.");
             }
         }
     }, true);
