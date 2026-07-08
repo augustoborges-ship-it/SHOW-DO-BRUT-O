@@ -4,17 +4,17 @@
 // Arquitetura: Event Delegation Global (Blindagem contra quebras de DOM)
 // =========================================================================
 
-//window.PIN_ACESSO_PRO = "1234";
+window.PIN_ACESSO_PRO = "1234"; // CORREÇÃO: Variável ativada!
 window.dificuldadeModoTreino = "fácil";
 window.questoesDaPartida = [];
 window.indiceQuestaoAtual = 0;
 window.EVENT_DELEGATION_MOUNTED = false;
 
-//// TRADUTOR DO BANCO GIGANTE (Mapeia o JSON para o Motor)
+// TRADUTOR DO BANCO GIGANTE (Mapeia o JSON para o Motor)
 window.initGameData = function() {
     console.log("[Core-Init] Mapeando Banco Global e Customizado...");
     
-    // Suporte ao Link Mágico (Embed)
+    // Suporte ao Link Mágico (Embed - Missões Híbridas)
     var mHash = window.location.hash.startsWith('#mutant=') ? window.location.hash.substring(8) : null;
     var mutantData = window.__MUTANT || mHash;
     if (mutantData) {
@@ -37,7 +37,7 @@ window.initGameData = function() {
         
         var rawBank = window.BANCO_BRUTAO_GLOBAL || [];
         
-        // Tradutor Universal
+        // Tradutor Universal (Resolve a divergência entre os JSONs)
         var globalQuestionsParsed = rawBank.map(function(q, index) {
             var anoSeguro = String(q.ano || 'Geral');
             if (anoSeguro !== 'Geral' && anoSeguro.toLowerCase().indexOf('ano') === -1) {
@@ -85,7 +85,7 @@ window.initGameData = function() {
     }
 };
 
-//document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function() {
     if (window.EVENT_DELEGATION_MOUNTED) return;
     window.EVENT_DELEGATION_MOUNTED = true;
 
@@ -106,6 +106,8 @@ window.initGameData = function() {
         // ========================================================
         if (textoBotao === "DESBLOQUEAR") {
             e.preventDefault();
+            e.stopPropagation(); // Trava outros eventos fantasma
+
             var modal = btn.closest('.fixed') || btn.closest('.absolute') || btn.parentElement.parentElement;
             var inputSenha = modal ? modal.querySelector('input') : null;
             
@@ -153,17 +155,35 @@ window.initGameData = function() {
             }
         }
 
-        //        // ========================================================
+        // ========================================================
         // C. START DA PARTIDA (JOGAR AGORA)
         // ========================================================
         else if (textoBotao === "JOGAR AGORA") {
             e.preventDefault();
-            var container = btn.closest('.screen') || btn.closest('.fixed') || document;
+            e.stopPropagation(); // Desliga a chamada inline do HTML para evitar execução dupla
+
+            var container = btn.closest('.screen') || btn.closest('.fixed') || btn.closest('.absolute') || document;
             var selects = container.querySelectorAll('select');
-            var inputNome = container.querySelector('input[type="text"]');
+            var inputsText = container.querySelectorAll('input[type="text"]');
             
-            var anoEscolar = selects[0] ? selects[0].value : "5º Ano";
-            var disc = selects[1] ? selects[1].value : "Matemática";
+            // Busca o input do nome do aluno
+            var inputNome = null;
+            for (var k = 0; k < inputsText.length; k++) {
+                if (inputsText[k].id === 'student-name' || inputsText[k].placeholder.toLowerCase().indexOf('nome') !== -1) {
+                    inputNome = inputsText[k];
+                    break;
+                }
+            }
+            if (!inputNome && inputsText.length > 0) inputNome = inputsText[0];
+            
+            // Busca o Ano e Disciplina selecionados
+            var anoEscolar = "5º Ano";
+            var disc = "Matemática";
+            if (selects.length >= 2) {
+                anoEscolar = selects[0].value;
+                disc = selects[1].value;
+            }
+            
             var pName = (inputNome && inputNome.value.trim() !== "") ? inputNome.value.trim() : "Herói Anônimo";
 
             // Dicionário de Sinônimos Lexicais para Inteligência de Filtro
@@ -232,7 +252,7 @@ window.initGameData = function() {
             window.activeQuestions = window.questoesDaPartida.slice(0, 16);
             window.globalQuestionIndex = 0;
 
-            // Telemetria (se existir)
+            // Telemetria (se existir o módulo no config)
             if (window.STORAGE_KEYS && typeof window.readJSONKey === 'function' && typeof window.writeJSONKey === 'function') {
                 var todayStr = new Date().toISOString().split('T')[0]; 
                 window.currentStudentTelemetryKey = pName.toLowerCase() + "_" + todayStr;
@@ -243,18 +263,19 @@ window.initGameData = function() {
             }
 
             // Ocultar modal/tela de setup
-            var modalAtivo = btn.closest('.fixed');
+            var modalAtivo = btn.closest('.fixed') || btn.closest('.absolute');
             if (modalAtivo) { modalAtivo.classList.remove('flex'); modalAtivo.classList.add('hidden'); }
             
-            var screenAtual = container.closest('.screen');
-            if (screenAtual) { screenAtual.classList.remove('active'); screenAtual.classList.add('hidden'); }
+            var telas = document.querySelectorAll('.screen');
+            for(var t = 0; t < telas.length; t++) telas[t].classList.remove('active');
             
             // Disparar o Core do Jogo
+            var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
+            if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
+
             if (typeof window.fireUpGame === 'function') {
                 window.fireUpGame();
             } else if (typeof window.loadQuestion === 'function') {
-                var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
-                if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
                 window.loadQuestion();
             }
         }
