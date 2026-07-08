@@ -1,7 +1,7 @@
 ---
 
-### ARQUIVO 2: O Coração do Jogo (O que foi apagado sem querer)
-Abra o arquivo **`logica_e_core_do_jogo.js`**, apague tudo e cole este bloco gigante. Ele traz de volta toda a inteligência do Modo Treino, o filtro, os cálculos de TRI e os visuais.
+### ARQUIVO 2: O Cérebro do Jogo (Substitua todo o conteúdo)
+Abra o arquivo **`logica_e_core_do_jogo.js`**, apague tudo e cole este código completo. Eu retirei todas as dependências frágeis. A partir de agora, se o jogador quiser iniciar o modo Treino e algo falhar na filtragem, o jogo misturará as questões sozinho e abrirá a tela sem perguntar nada.
 
 ```javascript:logica_e_core_do_jogo.js
 // =========================================================================
@@ -9,7 +9,7 @@ Abra o arquivo **`logica_e_core_do_jogo.js`**, apague tudo e cole este bloco gig
 // Função: Motor principal de partida, regras, validações e progressão
 // =========================================================================
 
-/* STREAMING_CHUNK:Inicializando globais e salvamento... */
+/* STREAMING_CHUNK:Globais e sistema de State... */
 window.saveProgress = function() { 
     if (!window.activeQuestions || !window.activeQuestions.length || !window.teams || !window.teams.length) return; 
     window.writeJSONKey(window.STORAGE_KEYS.state, { 
@@ -24,7 +24,6 @@ window.saveProgress = function() {
 
 window.clearProgress = function() { window.removeStorageKey(window.STORAGE_KEYS.state); };
 
-/* STREAMING_CHUNK:Sistema de Retomada e Histórico... */
 window.resumeGame = function() { 
     const st = window.readJSONKey(window.STORAGE_KEYS.state, null); 
     if(!st || !Array.isArray(st.teams) || !Array.isArray(st.activeQuestions) || !st.activeQuestions.length) { 
@@ -59,7 +58,7 @@ window.recordAnswerSnapshot = function(question, selectedIndex, wasCorrect, team
     window.saveProgress(); 
 };
 
-/* STREAMING_CHUNK:Gatilho do Modo Multiplayer (Professor)... */
+/* STREAMING_CHUNK:Gatilhos Multiplayer e Singleplayer... */
 window.startGame = function() {
     window.clearProgress(); window.isStudentMode = false; 
     const errDiv = window.el('setup-error-msg'); if(errDiv) errDiv.remove();
@@ -67,7 +66,6 @@ window.startGame = function() {
     
     let selectedYears = Array.from(window.qsa('#screen-setup input[id^="ano"]:checked')).map(cb => cb.value.toLowerCase()); 
     let selectedMundos = Array.from(window.qsa('#screen-setup input[id^="mundo"]:checked')).map(cb => cb.value.toLowerCase()); 
-    
     if (selectedYears.length === 0) selectedYears = ['5º ano'];
     if (selectedMundos.length === 0) selectedMundos = ['matemática'];
     
@@ -92,9 +90,10 @@ window.startGame = function() {
     window.fireUpGame();
 };
 
-/* STREAMING_CHUNK:Motor Absoluto do Modo Treino (Filtro e Interface)... */
+/* STREAMING_CHUNK:O Motor de Partida Blindado contra Bancos Vazios... */
 window.startStudentGame = function() {
     window.clearProgress(); window.isStudentMode = true; 
+    
     var container = document.getElementById('screen-setup-student') || document.querySelector('.screen.active') || document;
     var selects = container.querySelectorAll('select');
     var inputsText = container.querySelectorAll('input[type="text"]');
@@ -119,10 +118,10 @@ window.startStudentGame = function() {
     var numAnoBusca = String(anoEscolar).replace(/\D/g, "");
 
     if(!window.allQuestions || window.allQuestions.length === 0) {
-        alert("O Banco de Questões falhou no carregamento. Recarregue a página (CTRL+F5)."); return;
+        if(typeof window.initGameData === 'function') window.initGameData();
     }
 
-    // Peneira inteligente do motor
+    // FASE 1: Filtragem Rigorosa
     window.questoesDaPartida = window.allQuestions.filter(function(q) {
         var qAno = String(q.ano || "").toLowerCase();
         var qComp = String(q.componente || q.disciplina || "").toLowerCase();
@@ -136,7 +135,7 @@ window.startStudentGame = function() {
         return bateAno && bateDisc && bateDificuldade;
     });
 
-    // Sobrevivência 1: Se o nível matar o filtro, foca apenas na matéria
+    // FASE 2: Tolerância de Falha (Se não achou a dificuldade, ignora a dificuldade)
     if (window.questoesDaPartida.length === 0) {
         window.questoesDaPartida = window.allQuestions.filter(function(q) {
             var qAno = String(q.ano || "").toLowerCase();
@@ -144,14 +143,14 @@ window.startStudentGame = function() {
             return (qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca) && qComp.includes(String(disc).toLowerCase());
         });
         
-        // Sobrevivência 2: Se ainda assim falhar, injeta banco total misturado
+        // FASE 3: O Botão do Pânico (Se ainda der zero, joga TUDO que tiver no banco pra não travar a tela)
         if (window.questoesDaPartida.length === 0) {
-            console.warn("Filtros vazios. Entrando com Banco Global Aleatório.");
+            console.warn("Filtro total falhou. Carregando o banco global massivo.");
             window.questoesDaPartida = [...window.allQuestions];
         }
     }
 
-    // Algoritmo de Embaralhamento Rápido
+    // Embaralhador Rápido de Questões
     for (var r = window.questoesDaPartida.length - 1; r > 0; r--) {
         var s = Math.floor(Math.random() * (r + 1));
         var aux = window.questoesDaPartida[r];
@@ -162,7 +161,7 @@ window.startStudentGame = function() {
     window.teams = [{ name: pName, level: 0, status: 'playing', helps: { eliminar: false, palpite: false, dica: false, pular: 0 }, turmaId: null, students: [], responseTimes: [] }];
     window.gameMode = 'single'; window.currentTeamIndex = 0;
     
-    // Grava telemetria
+    // Telemetria (Log)
     if (window.STORAGE_KEYS && typeof window.readJSONKey === 'function' && typeof window.writeJSONKey === 'function') {
         var todayStr = new Date().toISOString().split('T')[0]; 
         window.currentStudentTelemetryKey = pName.toLowerCase() + "_" + todayStr;
@@ -172,7 +171,7 @@ window.startStudentGame = function() {
         window.writeJSONKey(window.STORAGE_KEYS.telemetry, telemetry);
     }
 
-    // Seleciona as 16 questões do jogo (faz loop se não tiver 16)
+    // Separa as 16 balas da pistola
     window.activeQuestions = [];
     while(window.activeQuestions.length < 16 && window.questoesDaPartida.length > 0) {
         for(let q of window.questoesDaPartida) {
@@ -181,17 +180,19 @@ window.startStudentGame = function() {
     }
     window.globalQuestionIndex = 0;
 
+    // Remove as telas de menu ativas
     var telas = document.querySelectorAll('.screen');
     for(var t = 0; t < telas.length; t++) telas[t].classList.remove('active');
     
     var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
     if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
     
+    // Gatilho final
     if (typeof window.fireUpGame === 'function') window.fireUpGame();
     else if (typeof window.loadQuestion === 'function') window.loadQuestion();
 };
 
-/* STREAMING_CHUNK:Inicializando Visualizações e Áudio... */
+/* STREAMING_CHUNK:Disparo de Transições de Tela... */
 window.fireUpGame = function() {
     const hudTeam = window.el('hud-team');
     if(hudTeam) hudTeam.style.display = window.gameMode === 'multi' ? 'flex' : 'none'; 
@@ -205,7 +206,7 @@ window.fireUpGame = function() {
     if(typeof window.loadQuestion === 'function') window.loadQuestion(); 
 };
 
-/* STREAMING_CHUNK:O Motor de Renderização de Questão na Tela... */
+/* STREAMING_CHUNK:Lógica Intocável do Apresentador e HUD... */
 window.loadQuestion = function() {
     window.isWaitingAnswer = false; 
     const team = window.teams[window.currentTeamIndex]; 
@@ -281,7 +282,7 @@ window.loadQuestion = function() {
     window.saveProgress(); window.questionStartTime = Date.now();
 };
 
-/* STREAMING_CHUNK:Módulo de Tempo e Tensão... */
+/* STREAMING_CHUNK:Lógica base de Timer e Respostas... */
 window.resetTimer = function() { 
     clearInterval(window.timerInterval); 
     if (window.audioTimeout) clearTimeout(window.audioTimeout); 
@@ -324,7 +325,6 @@ window.forceTimeOut = function() {
     setTimeout(goTempo, 8000); 
 };
 
-/* STREAMING_CHUNK:Validações e Ações do Jogador... */
 window.selectAnswer = function(selectedIndex, buttonElement) { 
     if(typeof window.closeDraggableHologram === 'function') window.closeDraggableHologram(); 
     if (window.isWaitingAnswer) return; 
@@ -423,7 +423,7 @@ window.confirmAnswer = function() {
     }, 5000); 
 };
 
-/* STREAMING_CHUNK:Transição, Lifelines (Ajudas) e Gestão de Turmas... */
+/* STREAMING_CHUNK:Transições de Telas e Modais Finais... */
 window.checkGameEnd = function(screenType) { 
     let activeCount = window.teams.filter(t => t.status === 'playing').length; const btn = window.el(`btn-end-${screenType}`); const btnText = window.el(`btn-end-${screenType}-text`); 
     if (activeCount === 0) { btnText.innerText = "VER RESULTADOS"; btn.onclick = () => { window.el(`screen-end-${screenType}`).classList.remove('active'); window.showLeaderboard(); }; } 

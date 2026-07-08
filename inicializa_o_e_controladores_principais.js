@@ -3,22 +3,21 @@
 // Função: Eventos de inicialização, DOMContentLoaded e Conexão UI -> Motor
 // =========================================================================
 
-/* STREAMING_CHUNK:Declarando variáveis de segurança no escopo Global... */
+/* STREAMING_CHUNK:Configurando ambiente blindado... */
 window.PIN_ACESSO_PRO = "1234";
 window.dificuldadeModoTreino = "fácil";
 window.bancoOriginal = [];
 
-/* STREAMING_CHUNK:Função de Validação do Acesso PRO (Blindada)... */
+/* STREAMING_CHUNK:Validação PRO com injeção forçada de Modais... */
 window.authProf = function(e) {
     if(e) { e.preventDefault(); e.stopPropagation(); }
+    
     var inputSenha = document.getElementById('prof-pin-input') || document.querySelector('#modal-prof-login input');
     
     if (!inputSenha) {
-        var modais = document.querySelectorAll('.fixed');
-        for(var i=0; i<modais.length; i++) {
-            if(modais[i].innerText.indexOf('ACESSO RESTRITO') !== -1 || modais[i].innerText.indexOf('PIN') !== -1) {
-                inputSenha = modais[i].querySelector('input'); break;
-            }
+        var todosInputs = document.querySelectorAll('input');
+        for(var k=0; k<todosInputs.length; k++) {
+            if(todosInputs[k].closest('.fixed')) { inputSenha = todosInputs[k]; break; }
         }
     }
     
@@ -26,13 +25,6 @@ window.authProf = function(e) {
         inputSenha.value = "";
         var modal = inputSenha.closest('.fixed');
         if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-        
-        // Força a transição para o dashboard caso o outro arquivo falhe
-        var screens = document.querySelectorAll('.screen');
-        for(var s=0; s<screens.length; s++) screens[s].classList.remove('active');
-        var dashboard = document.getElementById('screen-prof-dashboard');
-        if(dashboard) dashboard.classList.add('active');
-        
         if (typeof window.enterProfDashboard === 'function') window.enterProfDashboard();
     } else if (inputSenha) {
         inputSenha.classList.add('border-red-500', 'animate-pulse');
@@ -40,20 +32,38 @@ window.authProf = function(e) {
     }
 };
 
-/* STREAMING_CHUNK:Tradutor e Conversor de JSON (100% Tolerante a Falhas)... */
+/* STREAMING_CHUNK:Mapeando banco de dados 100% livre de Cache... */
 window.initGameData = function() {
-    console.log("[Core-Init] Lendo Banco Global de 7MB...");
+    console.log("[Core-Init] Reset de Fábrica: Limpando Cache e Lendo o Banco Global...");
+    
     try {
         if(typeof window.initTurmasData === 'function') window.initTurmasData();
+
         var rawBank = window.BANCO_BRUTAO_GLOBAL;
         
+        // Se o Javascript travar lendo o arquivo, essa vacina entra em ação.
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
-            console.error("🚨 window.BANCO_BRUTAO_GLOBAL está vazio. Verifique o arquivo de 7MB.");
-            rawBank = [{
-                "id": "EMERGENCIA_01", "disciplina": "Geral", "ano": "5º Ano", "nivel": "Básico",
-                "pergunta": "O Javascript bloqueou a leitura. Verifique se o arquivo motor_do_banco_de_questoes.js tem erros. Quanto é 10 + 10?",
-                "alternativas": ["10", "20", "30", "40"], "correta": 1, "justificativa_gabarito": "Teste de sistema."
-            }];
+            console.warn("ALERTA DE SISTEMA: O navegador abortou a leitura do arquivo de 7MB. Ativando Modo Fênix.");
+            rawBank = [
+                {
+                    "id": "EMERGENCIA_F", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
+                    "pergunta": "O seu arquivo motor_do_banco_de_questoes.js tem um erro de digitação. Quanto é 1+1?",
+                    "alternativas": ["1", "2", "3", "4"], "correta": 1, "justificativa_gabarito": "2."
+                },
+                {
+                    "id": "EMERGENCIA_M", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Intermediário",
+                    "pergunta": "O arquivo corrompido cancelou o carregamento de todas as questões. Quanto é 5x5?",
+                    "alternativas": ["10", "15", "25", "30"], "correta": 2, "justificativa_gabarito": "25."
+                },
+                {
+                    "id": "EMERGENCIA_D", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Avançado",
+                    "pergunta": "Descubra qual linha do seu JSON de 7MB está com erro. Qual a raiz de 100?",
+                    "alternativas": ["5", "8", "10", "12"], "correta": 2, "justificativa_gabarito": "10."
+                }
+            ];
+            // Replica as 3 questões até dar 16 (limite do jogo)
+            var b = []; for(let i=0; i<6; i++) { b = b.concat(rawBank); }
+            rawBank = b;
         }
 
         const globalQuestionsParsed = rawBank.map((q, index) => { 
@@ -85,18 +95,14 @@ window.initGameData = function() {
             }; 
         });
 
-        var customQuestions = [];
-        if (typeof window.readJSONKey === 'function' && window.STORAGE_KEYS) {
-            customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
-        }
-        window.allQuestions = globalQuestionsParsed.concat(customQuestions);
-        console.log(`✅ [Core-Init] ${window.allQuestions.length} questões mapeadas em RAM!`);
+        window.allQuestions = globalQuestionsParsed;
+        console.log(`✅ [Core-Init] FORÇA BRUTA: ${window.allQuestions.length} questões injetadas em RAM!`);
     } catch (e) {
         console.error("Erro fatal no initGameData:", e);
     }
 };
 
-/* STREAMING_CHUNK:Eventos Globais de Mouse (Delegação Total Inteligente)... */
+/* STREAMING_CHUNK:Ouvintes de Cliques Anti-Zombie (Event Delegation Absoluta)... */
 document.addEventListener("DOMContentLoaded", function() {
     if (typeof window.initGameData === 'function') window.initGameData();
 
@@ -106,8 +112,10 @@ document.addEventListener("DOMContentLoaded", function() {
         var txt = btn.innerText ? btn.innerText.trim().toUpperCase() : "";
 
         if (txt === "DESBLOQUEAR") {
+            e.preventDefault(); e.stopPropagation();
             if(typeof window.authProf === 'function') window.authProf(e);
-        } else if (txt === "FÁCIL" || txt === "MÉDIO" || txt === "DIFÍCIL") {
+        } 
+        else if (txt === "FÁCIL" || txt === "MÉDIO" || txt === "DIFÍCIL") {
             e.preventDefault(); e.stopPropagation();
             window.dificuldadeModoTreino = txt.toLowerCase();
             var irmaos = btn.parentElement.querySelectorAll('button');
@@ -117,15 +125,21 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             btn.classList.remove('bg-transparent', 'border-gray-600');
             btn.classList.add('bg-blue-600', 'border-blue-400');
-        } else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
+        } 
+        else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
             e.preventDefault(); e.stopPropagation();
-            var isStudentScreen = btn.closest('#screen-setup-student') || document.querySelector('#screen-setup-student.active');
+            
+            // Força a recarga do banco antes de iniciar se der tela preta
+            if(!window.allQuestions || window.allQuestions.length === 0) window.initGameData();
+
+            var isStudentScreen = btn.closest('#screen-setup-student') || document.querySelector('#screen-setup-student.active') || document.querySelector('.screen.active');
+            
             if (isStudentScreen && typeof window.startStudentGame === 'function') {
                 window.startStudentGame();
             } else if (typeof window.startGame === 'function') {
                 window.startGame();
             } else {
-                alert("Aviso: O motor do jogo não foi carregado corretamente.");
+                alert("O sistema falhou ao inicializar as regras do jogo. Feche essa aba e abra de novo (CTRL+F5).");
             }
         }
     }, true);
