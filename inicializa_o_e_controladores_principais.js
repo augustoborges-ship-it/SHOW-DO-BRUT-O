@@ -1,16 +1,14 @@
 // =========================================================================
 // Arquivo: inicializa_o_e_controladores_principais.js
-// Função: Eventos de inicialização, DOMContentLoaded e Motor Unificado
-// Arquitetura: Fuso Horário Único (Sem dependências externas para iniciar)
+// Função: Gatilhos, Leitura de Banco e Início do Jogo
 // =========================================================================
 
-console.log("🚀 [SISTEMA] inicializa_o_e_controladores_principais.js carregado.");
+console.log("🚀 [Core] Inicializador ativado.");
 
-/* STREAMING_CHUNK:Configurando escopo global e variáveis... */
+/* STREAMING_CHUNK:Variaveis e Acesso PRO... */
 window.PIN_ACESSO_PRO = "1234";
 window.dificuldadeModoTreino = "fácil";
 
-/* STREAMING_CHUNK:Acesso PRO Indestrutível... */
 window.authProf = function(e) {
     if(e) { e.preventDefault(); e.stopPropagation(); }
     var inputSenha = document.getElementById('prof-pin-input') || document.querySelector('#modal-prof-login input');
@@ -35,22 +33,24 @@ window.authProf = function(e) {
     }
 };
 
-/* STREAMING_CHUNK:Conversor Universal do Banco de Questões... */
+/* STREAMING_CHUNK:Conversor Limpo do Banco... */
 window.initGameData = function() {
-    console.log("⚙️ [Core] Convertendo o Banco de 7MB para o Jogo...");
+    console.log("⚙️ [Core] Lendo o Banco de Questões...");
     try {
         if(typeof window.initTurmasData === 'function') window.initTurmasData();
         var rawBank = window.BANCO_BRUTAO_GLOBAL;
         
+        // Se o arquivo de 7MB der erro de vírgula, essa proteção salva o jogo
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
-            console.error("🚨 ERRO: O arquivo motor_do_banco_de_questoes.js não carregou ou está vazio.");
-            // Injeta as de sobrevivência silenciosamente para não travar
-            rawBank = [{
-                "id": "EMERGENCIA_TOTAL", "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
-                "pergunta": "O SEU ARQUIVO motor_do_banco_de_questoes.js ESTÁ COM UM ERRO DE SINTAXE. O Javascript não conseguiu ler as 2.000 questões. Quanto é 2 + 2?",
-                "alternativas": ["1", "2", "4", "8"], "correta": 2, "justificativa_gabarito": "Resolva o erro no JSON."
-            }];
-            let tmp = []; for(let i=0; i<16; i++) tmp = tmp.concat(rawBank); rawBank = tmp;
+            console.error("🚨 ERRO: window.BANCO_BRUTAO_GLOBAL vazio. Verifique a sintaxe do arquivo de questões.");
+            rawBank = [];
+            for (let i = 0; i < 16; i++) {
+                rawBank.push({
+                    "id": "EMERGENCIA_" + i, "disciplina": "Matemática", "ano": "5º Ano", "nivel": "Básico",
+                    "pergunta": `🚨 MODO DE SOBREVIVÊNCIA 🚨 O seu arquivo 'motor_do_banco_de_questoes.js' falhou. Questão Falsa ${i+1}. Quanto é 2 + 2?`,
+                    "alternativas": ["1", "2", "4", "8"], "correta": 2, "justificativa_gabarito": "Se viu isso, corrija seu JSON."
+                });
+            }
         }
 
         window.allQuestions = rawBank.map((q, index) => { 
@@ -78,22 +78,14 @@ window.initGameData = function() {
 
             let comp = String(q.disciplina || q.componente || 'Geral');
             let profRaw = String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico');
-            let tagsRaw = Array.isArray(q.tags) ? q.tags.join(" ") : "";
-            let profCompleta = (profRaw + " " + tagsRaw).toLowerCase();
 
             return { 
                 id: String(q.id || `GLOBAL_${index}`), 
                 text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
                 category: `${comp} • ${anoSeguro} • Proficiência: ${profRaw}`, 
-                componente: comp.toLowerCase(), 
-                ano: anoSeguro.toLowerCase(), 
-                proficiencia: profCompleta, 
-                options: [altA, altB, altC, altD], 
-                answer: ansIdx, 
-                explicacao: String(q.justificativa_gabarito || q.feedback_correto || ""), 
-                image_url: q.imagem || q.image_url || null, 
-                bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), 
-                isCustom: false 
+                componente: comp.toLowerCase(), ano: anoSeguro.toLowerCase(), proficiencia: profRaw.toLowerCase(), 
+                options: [altA, altB, altC, altD], answer: ansIdx, explicacao: String(q.justificativa_gabarito || q.feedback_correto || ""), 
+                image_url: q.imagem || q.image_url || null, bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), isCustom: false 
             }; 
         });
 
@@ -102,16 +94,14 @@ window.initGameData = function() {
             customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
         }
         window.allQuestions = window.allQuestions.concat(customQuestions);
-        console.log(`✅ [Core] SUCESSO: ${window.allQuestions.length} questões mapeadas e prontas para uso!`);
+        console.log(`✅ [Core] ${window.allQuestions.length} questões na memória!`);
     } catch (e) {
-        console.error("🚨 Falha fatal ao converter questões:", e);
+        console.error("🚨 Falha fatal:", e);
     }
 };
 
-/* STREAMING_CHUNK:LÓGICA CONSOLIDADA: O Início do Modo Treino (Blindagem Final)... */
-// Sugando a função de início para dentro deste arquivo. Assim, ela nunca vai faltar!
+/* STREAMING_CHUNK:Lógica Absoluta do Modo Treino... */
 window.startStudentGameSafe = function() {
-    console.log("🚦 [Treino] Iniciando Preparativos...");
     if(typeof window.clearProgress === 'function') window.clearProgress(); 
     window.isStudentMode = true; 
     
@@ -138,38 +128,32 @@ window.startStudentGameSafe = function() {
 
     var numAnoBusca = String(anoEscolar).replace(/\D/g, "");
 
-    // Garante que o banco exista! Se estiver vazio, tenta ler novamente.
-    if(!window.allQuestions || window.allQuestions.length === 0) {
-        window.initGameData();
-    }
+    if(!window.allQuestions || window.allQuestions.length === 0) window.initGameData();
 
-    // Filtro OMNI-DIRECIONAL 
+    // Filtro Flexível (Verifica Nível, Disciplina e Ano)
     window.questoesDaPartida = window.allQuestions.filter(function(q) {
-        var qAno = q.ano; var qComp = q.componente; var qProf = q.proficiencia; 
-        var bateAno = qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca;
-        var bateDisc = qComp.includes(String(disc).toLowerCase());
+        var bateAno = q.ano.includes(String(anoEscolar).toLowerCase()) || q.ano.includes(numAnoBusca) || q.ano === numAnoBusca;
+        var bateDisc = q.componente.includes(String(disc).toLowerCase());
         var bateDificuldade = false;
         for (var x = 0; x < tagsAceitas.length; x++) {
-            if (qProf.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
+            if (q.proficiencia.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
         }
         return bateAno && bateDisc && bateDificuldade;
     });
 
-    // SISTEMA ANTI-TELA PRETA: Ignora Dificuldade
+    // SISTEMA ANTI-TELA PRETA: Se faltar questão com esse nível, puxa a matéria toda
     if (window.questoesDaPartida.length === 0) {
         window.questoesDaPartida = window.allQuestions.filter(function(q) {
-            var qAno = q.ano; var qComp = q.componente;
-            return (qAno.includes(String(anoEscolar).toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca) && qComp.includes(String(disc).toLowerCase());
+            return (q.ano.includes(String(anoEscolar).toLowerCase()) || q.ano.includes(numAnoBusca) || q.ano === numAnoBusca) && q.componente.includes(String(disc).toLowerCase());
         });
         
-        // PÂNICO TOTAL: Injeta TUDO
+        // PÂNICO TOTAL: Se não achar nada da matéria, roda o banco inteiro
         if (window.questoesDaPartida.length === 0) {
-            console.warn("⚠️ Filtro não encontrou nada. Carregando o banco global massivo.");
             window.questoesDaPartida = [...window.allQuestions];
         }
     }
 
-    // Embaralha as questões sorteadas
+    // Embaralha
     for (var r = window.questoesDaPartida.length - 1; r > 0; r--) {
         var s = Math.floor(Math.random() * (r + 1));
         var aux = window.questoesDaPartida[r];
@@ -203,15 +187,12 @@ window.startStudentGameSafe = function() {
     var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
     if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
     
-    console.log("🎯 [Treino] Disparando FireUpGame...");
     if (typeof window.fireUpGame === 'function') window.fireUpGame();
 };
 
-/* STREAMING_CHUNK:Gatilhos Globais de Prevenção de Erros de HTML... */
+/* STREAMING_CHUNK:Eventos Globais... */
 document.addEventListener("DOMContentLoaded", function() {
-    setTimeout(function() {
-        if (typeof window.initGameData === 'function') window.initGameData();
-    }, 500); 
+    window.initGameData(); // Chama na hora que a página carrega
 
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('button');
@@ -220,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (txt === "DESBLOQUEAR") {
             e.preventDefault(); e.stopPropagation();
-            if(typeof window.authProf === 'function') window.authProf(e);
+            window.authProf(e);
         } else if (txt === "FÁCIL" || txt === "MÉDIO" || txt === "DIFÍCIL") {
             e.preventDefault(); e.stopPropagation();
             window.dificuldadeModoTreino = txt.toLowerCase();
@@ -233,15 +214,12 @@ document.addEventListener("DOMContentLoaded", function() {
             btn.classList.add('bg-blue-600', 'border-blue-400');
         } else if (txt === "JOGAR AGORA" || txt === "INICIAR MISSÃO") {
             e.preventDefault(); e.stopPropagation();
-            
             var isStudentScreen = btn.closest('#screen-setup-student') || document.querySelector('#screen-setup-student.active') || document.querySelector('.screen.active');
             
             if (isStudentScreen) {
-                // CHAMA A NOVA FUNÇÃO BLINDADA QUE ACABAMOS DE CRIAR!
                 window.startStudentGameSafe();
             } else {
                 if (typeof window.startGame === 'function') window.startGame();
-                else alert("Erro: O arquivo logica_e_core_do_jogo.js está quebrado ou vazio.");
             }
         }
     }, true);
