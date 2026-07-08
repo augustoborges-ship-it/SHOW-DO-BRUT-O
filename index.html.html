@@ -1,24 +1,185 @@
-<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show do Brutão Premium AAA+</title>
+    <!-- Tailwind CSS (Motor de Estilos Rápido) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fontes Premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Arquivo de CSS Customizado -->
+    <link rel="stylesheet" href="estilos_do_jogo.css">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background-color: #0f172a; color: #ffffff; overflow-x: hidden; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .text-shadow-tv { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+
+    <!-- OVERLAY DE DRAG & DROP (Para o Professor soltar o arquivo .brutao) -->
     <div id="drag-drop-overlay" class="fixed inset-0 z-[999999] hidden bg-indigo-950/95 backdrop-blur-md flex-col items-center justify-center border-8 border-dashed border-cyan-400 pointer-events-none transition-all duration-300">
-        <div class="text-8xl mb-6 animate-bounce drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]">📥</div>
-        <h2 class="text-4xl md:text-6xl font-black text-white font-orbitron uppercase text-shadow-tv text-center drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">SOLTE OS BOLETINS AQUI</h2>
-        <p class="text-cyan-200 mt-4 font-bold text-xl uppercase tracking-widest font-montserrat">Sincronização Inteligente (.brutao)</p>
+        <h1 class="text-4xl text-white font-bold font-orbitron animate-pulse">SOLTE O ARQUIVO AQUI</h1>
+        <p class="text-cyan-200 mt-4">Para importar as notas para o Diário</p>
     </div>
 
-    <!-- 
-      ATENÇÃO MESTRE: ORDEM DE CARREGAMENTO OFICIAL GITHUB PAGES
-      O banco de questões (com as 2.000 questões) DEVE ser o primeiro script!
-    -->
-    <script src="banco_questoes_global.js"></script>
+    <!-- TELA INICIAL (MENU) -->
+    <div id="tela-inicial" class="flex flex-col items-center justify-center min-h-screen p-4 relative z-10 w-full max-w-md mx-auto">
+        
+        <h1 class="text-5xl md:text-6xl font-black font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-yellow-500 mb-8 text-center drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+            SHOW DO BRUTÃO
+        </h1>
+        
+        <div class="bg-gray-800/80 p-8 rounded-3xl border border-gray-700 shadow-2xl w-full backdrop-blur-md">
+            <p class="text-center text-gray-400 mb-6 text-sm">Prepare-se para o desafio cognitivo.</p>
+            
+            <button id="btn-jogar" class="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white font-black py-4 rounded-xl mb-4 hover:scale-105 transition-transform text-lg shadow-[0_0_15px_rgba(59,130,246,0.5)] uppercase tracking-widest">
+                INICIAR MISSÃO
+            </button>
+            
+            <!-- Botões que aparecem dinamicamente se houver dados salvos -->
+            <button id="btn-retomar" class="w-full bg-gradient-to-r from-green-600 to-green-400 text-white font-black py-4 rounded-xl mb-4 hover:scale-105 transition-transform text-lg shadow-[0_0_15px_rgba(16,185,129,0.5)] uppercase tracking-widest hidden">
+                RETOMAR PARTIDA
+            </button>
+            
+            <button id="btn-recuperar-boletim" class="w-full bg-gradient-to-r from-yellow-600 to-yellow-400 text-white font-black py-4 rounded-xl mb-4 hover:scale-105 transition-transform text-lg shadow-[0_0_15px_rgba(234,179,8,0.5)] uppercase tracking-widest hidden">
+                📥 RECUPERAR BOLETIM
+            </button>
+            
+            <hr class="border-gray-700 my-6">
+            
+            <button id="btn-painel-professor" class="w-full bg-gray-900 border border-gray-600 text-gray-300 font-bold py-3 rounded-xl hover:bg-gray-700 transition-colors text-sm uppercase tracking-wider">
+                ⚙️ Painel do Professor
+            </button>
+        </div>
+    </div>
 
-    <!-- Scripts do Motor do Jogo Premium (Organizados na pasta 'js') -->
-    <script src="js/config.js"></script>
-    <script src="js/questions.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/game.js"></script>
-    <script src="js/app.js"></script>
+    <!-- TELA DO JOGO (GAMEPLAY) -->
+    <div id="tela-jogo" class="hidden flex-col min-h-screen relative z-10 p-4 max-w-6xl mx-auto w-full">
+        
+        <!-- Header Superior -->
+        <div class="flex justify-between items-center bg-gray-800/90 p-4 rounded-2xl border border-gray-700 mb-6 backdrop-blur-md shadow-lg">
+            <div id="q-id" class="text-gray-400 font-mono text-sm flex items-center">ID: ---</div>
+            
+            <div class="flex gap-6 text-center font-orbitron font-bold">
+                <div class="hidden sm:block">
+                    <div class="text-[10px] text-red-400 tracking-widest">PARAR:</div>
+                    <div id="stop-award-display" class="text-lg text-white">0</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-green-400 tracking-widest">ACERTAR:</div>
+                    <div id="award-display" class="text-2xl md:text-3xl text-yellow-400 text-shadow-tv">1 MILHÃO</div>
+                </div>
+            </div>
+        </div>
 
-    <script>
-        // --- INJEÇÃO DE AUTOCURA DOM (CORREÇÃO DE BUG VISUAL E DUPLICATAS) ---
-        window.addEventListener('DOMContentLoaded', () => {
-<!-- ... existing code ... -->
+        <!-- Área da Pergunta -->
+        <div class="flex-1 flex flex-col justify-center items-center text-center mb-8 relative bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-700/50">
+            <div id="question-text" class="text-xl md:text-3xl font-bold mb-6 max-w-4xl drop-shadow-md leading-relaxed">
+                Carregando pergunta do servidor local...
+            </div>
+            
+            <div id="image-container" class="hidden mb-6 w-full flex justify-center">
+                <img id="question-image" src="" alt="Recurso Visual" class="max-h-64 md:max-h-80 rounded-xl shadow-2xl border-4 border-gray-700 object-contain bg-white">
+            </div>
+        </div>
+
+        <!-- Alternativas -->
+        <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <!-- Alternativas Injetadas via JS -->
+        </div>
+        
+        <!-- Ajudas (Lifelines) -->
+        <div id="lifelines-container" class="flex justify-center gap-4 flex-wrap">
+            <!-- Botões Injetados via JS -->
+        </div>
+    </div>
+
+    <!-- TELA DE RESULTADO / LEADERBOARD -->
+    <div id="tela-resultado" class="hidden flex-col items-center justify-center min-h-screen p-4 relative z-10 text-center bg-gray-900/95 backdrop-blur-xl">
+        <h1 class="text-5xl md:text-7xl font-black font-orbitron text-yellow-400 mb-2 drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]">MISSÃO CUMPRIDA!</h1>
+        <p id="resultado-texto" class="text-xl md:text-2xl text-gray-300 mb-8 font-semibold">Calculando dados de proficiência...</p>
+        
+        <!-- Local onde o QR Code e Botões de Download serão injetados -->
+        <div id="leaderboard-container" class="w-full max-w-2xl"></div>
+
+        <button id="btn-voltar-menu" class="mt-8 bg-gray-800 border border-gray-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-gray-700 transition-all uppercase tracking-widest">VOLTAR AO MENU PRINCIPAL</button>
+    </div>
+
+    <!-- MODAL SHARE (Painel do Professor) -->
+    <div id="modal-share" class="fixed inset-0 z-50 hidden bg-black/95 backdrop-blur-md flex-col items-center justify-center p-4">
+         <div class="bg-gray-800 border-2 border-cyan-500/50 rounded-3xl p-8 max-w-3xl w-full text-center shadow-[0_0_40px_rgba(6,182,212,0.2)]">
+            <h2 class="text-3xl font-orbitron font-bold text-cyan-400 mb-2">Central de Operações</h2>
+            <p class="text-gray-400 mb-6">Aqui você cria e gerencia os links mágicos.</p>
+            
+            <div id="share-link-container" class="bg-gray-950 p-6 rounded-xl text-green-400 font-mono text-sm break-all mb-6 border border-gray-700 shadow-inner overflow-y-auto max-h-40">
+                <!-- Links gerados aparecerão aqui -->
+            </div>
+            
+            <button onclick="document.getElementById('modal-share').classList.add('hidden'); document.getElementById('modal-share').classList.remove('flex');" class="w-full bg-gray-700 text-white font-bold py-4 rounded-xl hover:bg-gray-600 transition-colors uppercase tracking-widest">FECHAR PAINEL</button>
+         </div>
+    </div>
+
+    <!-- MODAL DE REPORTAR ERRO (CROWDSOURCING QA) -->
+    <div id="modal-report-error" class="fixed inset-0 z-[150] hidden bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-red-950 to-black border-2 border-red-500 rounded-3xl p-8 max-w-lg w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.4)] relative">
+            <button onclick="if(typeof window.closeReportError === 'function') window.closeReportError(); else { this.parentElement.parentElement.classList.add('hidden'); this.parentElement.parentElement.classList.remove('flex'); }" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            <div class="w-20 h-20 bg-red-900/50 border border-red-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner animate-pulse">⚠️</div>
+            <h2 class="text-2xl font-black text-white font-orbitron tracking-wider mb-2 uppercase text-shadow-tv">Reportar Problema</h2>
+            <p class="text-red-200/70 text-sm mb-6">Encontrou um erro nesta questão? Ajude-nos a melhorar o banco global avisando a equipe técnica.</p>
+
+            <div class="text-left bg-black/50 p-5 rounded-xl border border-white/10 mb-6 shadow-inner">
+                <div class="mb-4">
+                    <span class="block text-red-400 text-[10px] font-bold uppercase tracking-widest mb-1">Questão Identificada</span>
+                    <span id="report-q-id" class="text-white font-mono font-bold bg-white/10 px-2 py-1 rounded text-xs"></span>
+                    <p id="report-q-text" class="text-gray-400 text-xs mt-2 italic line-clamp-2"></p>
+                </div>
+
+                <label class="block text-red-400 text-[10px] font-bold uppercase tracking-widest mb-2">Qual é o problema?</label>
+                <select id="report-type" class="w-full bg-red-950/30 border border-red-500/50 rounded-lg p-3 text-white text-sm focus:border-red-400 outline-none mb-4 cursor-pointer transition-colors">
+                    <option value="Gabarito Incorreto (Resposta Errada)">Gabarito Incorreto (Resposta Errada)</option>
+                    <option value="Erro de Digitação / Enunciado Confuso">Erro de Digitação / Enunciado Confuso</option>
+                    <option value="Habilidade BNCC Incorreta">Habilidade BNCC Incorreta</option>
+                    <option value="Alternativas Repetidas ou Inválidas">Alternativas Repetidas ou Inválidas</option>
+                    <option value="Problema na Imagem">Problema na Imagem</option>
+                    <option value="Outro Problema...">Outro Problema...</option>
+                </select>
+
+                <label class="block text-red-400 text-[10px] font-bold uppercase tracking-widest mb-2">Detalhes (Opcional mas Ajuda Muito)</label>
+                <textarea id="report-details" rows="3" placeholder="Ex: A resposta correta deveria ser a letra B, pois..." class="w-full bg-red-950/30 border border-red-500/50 rounded-lg p-3 text-white text-sm focus:border-red-400 outline-none resize-none transition-colors custom-scrollbar"></textarea>
+            </div>
+
+            <button onclick="if(typeof window.sendErrorReport === 'function') window.sendErrorReport();" class="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white font-black py-4 rounded-xl hover:scale-105 transition-all uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center gap-3">
+                <span>📲</span> ENVIAR ALERTA NO WHATSAPP
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         A ORDEM RIGOROSA DE CARREGAMENTO DO MOTOR
+         BASEADA NOS NOMES EXATOS DA SUA PASTA
+         ========================================== -->
+    <!-- 1. O NOVO BANCO GLOBAL DE 2.000 QUESTÕES -->
+    <script src="motor_do_banco_de_questoes.js"></script>
+
+    <!-- 2. CONFIGURAÇÕES BASE DO JOGO -->
+    <script src="configura_es_e_utilitarios.js"></script>
+
+    <!-- 3. COMPILADOR DE QUESTÕES (Traduz o Banco para o Jogo) -->
+    <script src="banco_de_questoes.js"></script>
+
+    <!-- 4. MOTOR DE JOGABILIDADE (Tempo, Regras, Tri) -->
+    <script src="logica_e_core_do_jogo.js"></script>
+
+    <!-- 5. ESTRUTURA VISUAL E BOTÕES -->
+    <script src="interface_visual_e_dom.js"></script>
+
+    <!-- 6. GATILHO INICIAL (O que faz o jogo dar o Start) -->
+    <script src="inicializa_o_e_controladores_principais.js"></script>
+
+</body>
+</html>
