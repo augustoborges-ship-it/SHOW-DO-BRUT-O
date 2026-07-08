@@ -1,39 +1,50 @@
-// ... existing code ...
-window.initTurmasData = function() { window.allTurmas = window.readJSONKey(window.STORAGE_KEYS.classes, []); };
+// =========================================================================
+// Arquivo: inicializa_o_e_controladores_principais.js
+// Função: Eventos de inicialização, DOMContentLoaded e Conexão UI -> Motor
+// Arquitetura: Event Delegation Global (Blindagem contra quebras de DOM)
+// =========================================================================
 
+//window.PIN_ACESSO_PRO = "1234";
+window.dificuldadeModoTreino = "fácil";
+window.questoesDaPartida = [];
+window.indiceQuestaoAtual = 0;
+window.EVENT_DELEGATION_MOUNTED = false;
+
+//// TRADUTOR DO BANCO GIGANTE (Mapeia o JSON para o Motor)
 window.initGameData = function() {
-    const mHash = window.location.hash.startsWith('#mutant=') ? window.location.hash.substring(8) : null;
-    const mutantData = window.__MUTANT || mHash;
+    console.log("[Core-Init] Mapeando Banco Global e Customizado...");
     
+    // Suporte ao Link Mágico (Embed)
+    var mHash = window.location.hash.startsWith('#mutant=') ? window.location.hash.substring(8) : null;
+    var mutantData = window.__MUTANT || mHash;
     if (mutantData) {
         try { 
-            const p = JSON.parse(decodeURIComponent(escape(atob(mutantData)))); 
+            var p = JSON.parse(decodeURIComponent(escape(atob(mutantData)))); 
             window.CURRENT_MISSION_ID = p.missionId; 
             window.MUTANT_MODE = p.mode; 
             window.allQuestions = p.questions; 
             if(mHash) { 
-                const s = window.ce('style'); 
+                var s = document.createElement('style'); 
                 s.innerHTML = 'div[onclick="window.openProfLogin()"]{display:none!important;}'; 
                 document.head.appendChild(s); 
             }
             return; 
-        } catch(e){}
+        } catch(e) {}
     }
-    
-    try { 
-        window.initTurmasData(); 
-        const rawBank = window.BANCO_BRUTAO_GLOBAL || [];
+
+    try {
+        if (typeof window.initTurmasData === 'function') window.initTurmasData();
         
-        // --- NOVO MOTOR DE PARSE (BLINDADO CONTRA NÚMEROS E NOMES DIFERENTES) ---
-        const globalQuestionsParsed = rawBank.map((q, index) => { 
-            // 1. Blindagem do Ano (Garante que vira texto, ex: "1º Ano")
-            let anoSeguro = String(q.ano || 'Geral');
-            if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) {
+        var rawBank = window.BANCO_BRUTAO_GLOBAL || [];
+        
+        // Tradutor Universal
+        var globalQuestionsParsed = rawBank.map(function(q, index) {
+            var anoSeguro = String(q.ano || 'Geral');
+            if (anoSeguro !== 'Geral' && anoSeguro.toLowerCase().indexOf('ano') === -1) {
                 anoSeguro += 'º Ano';
             }
 
-            // 2. Extrai as alternativas seja como Array (novo json) ou Objeto (antigo)
-            let altA = "", altB = "", altC = "", altD = "";
+            var altA = "", altB = "", altC = "", altD = "";
             if (Array.isArray(q.alternativas)) {
                 altA = q.alternativas[0] || ""; altB = q.alternativas[1] || "";
                 altC = q.alternativas[2] || ""; altD = q.alternativas[3] || "";
@@ -42,20 +53,18 @@ window.initGameData = function() {
                 altC = q.alternativas.C || ""; altD = q.alternativas.D || "";
             }
 
-            // 3. Lê o gabarito (Número vs Letra)
-            let ansIdx = 0;
+            var ansIdx = 0;
             if (q.correta !== undefined && q.correta !== null) ansIdx = parseInt(q.correta);
             else if (q.gabarito_letra) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[q.gabarito_letra.toUpperCase()] || 0;
             else if (q.resposta_correta) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[q.resposta_correta.toUpperCase()] || 0;
 
-            // 4. Mapeia tudo para o idioma do jogo
             return { 
-                id: q.id || `GLOBAL_${index}`, 
+                id: q.id || ("GLOBAL_" + index), 
                 text: q.pergunta || q.enunciado || "Sem enunciado", 
-                category: `${q.disciplina || q.componente || 'Geral'} • ${anoSeguro} • Proficiência: ${q.nivel || q.nivel_proficiencia || 'Básico'}`, 
+                category: (q.disciplina || q.componente || 'Geral') + " • " + anoSeguro + " • Proficiência: " + (q.nivel || q.nivel_proficiencia || 'Básico'), 
                 componente: String(q.disciplina || q.componente || '').toLowerCase(), 
                 ano: anoSeguro.toLowerCase(), 
-                proficiencia: String(q.nivel || q.nivel_proficiencia || 'Básico').toLowerCase(), 
+                proficiencia: String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico').toLowerCase(), 
                 options: [altA, altB, altC, altD], 
                 answer: ansIdx, 
                 explicacao: q.justificativa_gabarito || q.explicacao || q.feedback_correto || "", 
@@ -63,106 +72,191 @@ window.initGameData = function() {
                 bncc: q.habilidade_bncc_codigo_referencial || q.bncc || "N/A", 
                 isCustom: false 
             }; 
-        }); 
-        
-        const customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []); 
-        window.allQuestions = [...globalQuestionsParsed, ...customQuestions]; 
-        
+        });
+
+        var customQuestions = [];
+        if (typeof window.readJSONKey === 'function' && window.STORAGE_KEYS) {
+            customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
+        }
+        window.allQuestions = globalQuestionsParsed.concat(customQuestions);
+        console.log("[Core-Init] Total de " + window.allQuestions.length + " questões prontas.");
     } catch (e) {
-        console.error("Falha ao inicializar dados do jogo:", e);
+        console.error("[Core-Init] Falha fatal ao inicializar banco:", e);
     }
 };
 
-// --- INTEGRAÇÕES E IMPORTAÇÕES ---
-window.checkMagicLinkSync = function() { 
-// ... existing code ...
-```
+//document.addEventListener("DOMContentLoaded", function() {
+    if (window.EVENT_DELEGATION_MOUNTED) return;
+    window.EVENT_DELEGATION_MOUNTED = true;
 
-### 2️⃣ Atualizar o Painel do Professor (Para clonagem de itens)
-
-Abra o arquivo **`banco_de_questoes.js`**. Procure as funções `window.renderCommunityBankList` e `window.cloneCommunitySelected` (na segunda metade do arquivo) e substitua por esta versão:
-
-```javascript:Banco de Questões:banco_de_questoes.js
-// ... existing code ...
-window.renderCommunityBankList = function() { 
-    const container = window.el('community-bank-list'); 
-    if(!container) return;
-    container.innerHTML = ''; 
-    const nativeQs = window.BANCO_BRUTAO_GLOBAL || []; 
+    console.log("[Core-DOM] Módulo Blindado de Interface carregado.");
     
-    if (nativeQs.length === 0) { container.innerHTML = '<p class="text-gray-400 text-center py-10">O banco global está vazio ou o arquivo externo não foi carregado.</p>'; return; } 
-    
-    nativeQs.forEach((q, index) => { 
-        const div = window.ce('div'); 
-        div.className = "flex items-start gap-4 p-4 bg-black/40 border border-white/10 rounded-xl mb-3 hover:bg-white/5 transition-colors cursor-pointer group"; 
-        div.onclick = function(e) { if(e.target.tagName.toLowerCase() !== 'input') { const cb = window.el(`comm-cb-${index}`); if(cb) cb.checked = !cb.checked; } }; 
+    // Dispara a leitura do banco imediatamente
+    if (typeof window.initGameData === 'function') window.initGameData();
+
+    // DELEGAÇÃO GLOBAL DE EVENTOS (À prova de falhas de renderização de Modais)
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('button');
+        if (!btn) return;
         
-        // Tratamento robusto para os nomes do JSON
-        const comp = q.disciplina || q.componente || 'Geral';
-        let anoStr = String(q.ano || 'Geral');
-        if (anoStr !== 'Geral' && !anoStr.toLowerCase().includes('ano')) anoStr += 'º Ano';
-        const prof = q.nivel || q.nivel_proficiencia || 'Básico';
-        const enun = q.pergunta || q.enunciado || 'Questão sem enunciado';
+        var textoBotao = btn.innerText ? btn.innerText.trim().toUpperCase() : "";
 
-        div.innerHTML = `<input type="checkbox" id="comm-cb-${index}" value="${index}" class="comm-checkbox w-6 h-6 mt-1 accent-emerald-500 cursor-pointer"><div class="flex-1 pointer-events-none"><div class="flex gap-2 items-center mb-2 flex-wrap"><span class="bg-blue-900/50 text-blue-300 border border-blue-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${comp}</span><span class="bg-indigo-900/50 text-indigo-300 border border-indigo-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${anoStr}</span><span class="bg-yellow-900/50 text-yellow-300 border border-yellow-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest">${prof}</span></div><p class="text-white text-sm font-medium leading-relaxed group-hover:text-emerald-200 transition-colors">${enun}</p></div>`; 
-        container.appendChild(div); 
-    }); 
-};
-
-window.toggleSelectAllCommunity = function(sourceCheckbox) { const checkboxes = document.querySelectorAll('.comm-checkbox'); checkboxes.forEach(cb => cb.checked = sourceCheckbox.checked); };
-
-window.cloneCommunitySelected = function() { 
-    const checkboxes = document.querySelectorAll('.comm-checkbox:checked'); 
-    if (checkboxes.length === 0) { window.showSystemMessage("Aviso", "Selecione pelo menos uma questão para importar.", "info"); return; } 
-    
-    const nativeQs = window.BANCO_BRUTAO_GLOBAL || []; 
-    let current = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []); 
-    let added = 0; 
-    
-    checkboxes.forEach(cb => { 
-        const idx = parseInt(cb.value); const rawQ = nativeQs[idx]; 
-        if (rawQ) { 
-            let anoSeguro = String(rawQ.ano || 'Geral');
-            if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) anoSeguro += 'º Ano';
+        // ========================================================
+        // A. DESBLOQUEIO DO ACESSO PRO (PIN)
+        // ========================================================
+        if (textoBotao === "DESBLOQUEAR") {
+            e.preventDefault();
+            var modal = btn.closest('.fixed') || btn.closest('.absolute') || btn.parentElement.parentElement;
+            var inputSenha = modal ? modal.querySelector('input') : null;
             
-            let altA = "", altB = "", altC = "", altD = "";
-            if (Array.isArray(rawQ.alternativas)) {
-                altA = rawQ.alternativas[0] || ""; altB = rawQ.alternativas[1] || ""; altC = rawQ.alternativas[2] || ""; altD = rawQ.alternativas[3] || "";
-            } else if (rawQ.alternativas) {
-                altA = rawQ.alternativas.A || ""; altB = rawQ.alternativas.B || ""; altC = rawQ.alternativas.C || ""; altD = rawQ.alternativas.D || "";
+            if (inputSenha && inputSenha.value === window.PIN_ACESSO_PRO) {
+                inputSenha.value = ""; // Limpa a senha
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+                
+                // Abre o painel
+                if (typeof window.enterProfDashboard === 'function') {
+                    window.enterProfDashboard();
+                }
+            } else {
+                // Efeito Tremor de Erro (Tailwind)
+                if (inputSenha) {
+                    inputSenha.classList.add('border-red-500', 'animate-pulse');
+                    setTimeout(function() {
+                        inputSenha.classList.remove('border-red-500', 'animate-pulse');
+                    }, 1000);
+                }
+            }
+        }
+
+        // ========================================================
+        // B. SELEÇÃO DE DIFICULDADE (MODO TREINO)
+        // ========================================================
+        else if (textoBotao === "FÁCIL" || textoBotao === "MÉDIO" || textoBotao === "DIFÍCIL") {
+            e.preventDefault();
+            var containerModoTreino = btn.parentElement;
+            
+            // Garante que é o grupo de botões de Dificuldade
+            if (containerModoTreino && containerModoTreino.innerText.toUpperCase().indexOf("FÁCIL") !== -1) {
+                var todosOsIrmaos = containerModoTreino.querySelectorAll('button');
+                for (var j = 0; j < todosOsIrmaos.length; j++) {
+                    todosOsIrmaos[j].classList.remove('bg-blue-600', 'border-blue-400', 'bg-green-600');
+                    todosOsIrmaos[j].classList.add('bg-transparent', 'border-gray-600');
+                }
+                
+                // Pinta o botão selecionado
+                btn.classList.remove('bg-transparent', 'border-gray-600');
+                btn.classList.add('bg-blue-600', 'border-blue-400');
+                window.dificuldadeModoTreino = textoBotao.toLowerCase();
+            }
+        }
+
+        //        // ========================================================
+        // C. START DA PARTIDA (JOGAR AGORA)
+        // ========================================================
+        else if (textoBotao === "JOGAR AGORA") {
+            e.preventDefault();
+            var container = btn.closest('.screen') || btn.closest('.fixed') || document;
+            var selects = container.querySelectorAll('select');
+            var inputNome = container.querySelector('input[type="text"]');
+            
+            var anoEscolar = selects[0] ? selects[0].value : "5º Ano";
+            var disc = selects[1] ? selects[1].value : "Matemática";
+            var pName = (inputNome && inputNome.value.trim() !== "") ? inputNome.value.trim() : "Herói Anônimo";
+
+            // Dicionário de Sinônimos Lexicais para Inteligência de Filtro
+            var tagsAceitas = ["básico"];
+            if (window.dificuldadeModoTreino === "fácil") tagsAceitas = ["básico", "b1", "b2", "fácil", "baixo"];
+            else if (window.dificuldadeModoTreino === "médio") tagsAceitas = ["intermediário", "b3", "b4", "médio", "adequado"];
+            else if (window.dificuldadeModoTreino === "difícil") tagsAceitas = ["avançado", "b5", "b6", "difícil", "alto"];
+
+            var numAnoBusca = anoEscolar.replace(/\D/g, "");
+
+            window.questoesDaPartida = window.allQuestions.filter(function(q) {
+                var qAno = String(q.ano || "").toLowerCase();
+                var qComp = String(q.componente || q.disciplina || "").toLowerCase();
+                var qNiv = String(q.proficiencia || q.nivel_proficiencia || q.nivel || "").toLowerCase();
+
+                var bateAno = qAno.includes(anoEscolar.toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca;
+                var bateDisc = qComp.includes(disc.toLowerCase());
+                var bateDificuldade = false;
+
+                for (var x = 0; x < tagsAceitas.length; x++) {
+                    if (qNiv.includes(tagsAceitas[x])) { bateDificuldade = true; break; }
+                }
+                return bateAno && bateDisc && bateDificuldade;
+            });
+
+            // Se for restrito demais, solta a trava da dificuldade para o jogo não travar
+            if (window.questoesDaPartida.length === 0) {
+                console.warn("[Core] Filtro rigoroso falhou. Buscando qualquer questão no eixo Ano/Disciplina...");
+                window.questoesDaPartida = window.allQuestions.filter(function(q) {
+                    var qAno = String(q.ano || "").toLowerCase();
+                    var qComp = String(q.componente || q.disciplina || "").toLowerCase();
+                    return (qAno.includes(anoEscolar.toLowerCase()) || qAno.includes(numAnoBusca) || qAno === numAnoBusca) && qComp.includes(disc.toLowerCase());
+                });
+                
+                if (window.questoesDaPartida.length === 0) {
+                    if (typeof window.showSystemMessage === 'function') {
+                        window.showSystemMessage("Banco Vazio", "A inteligência não encontrou itens cadastrados para " + disc + " do " + anoEscolar + ".", "error");
+                    } else {
+                        alert("Sistema Brutão: Nenhuma questão encontrada para " + disc + " do " + anoEscolar + ".");
+                    }
+                    return;
+                }
             }
 
-            let ansIdx = 0;
-            if (rawQ.correta !== undefined && rawQ.correta !== null) ansIdx = parseInt(rawQ.correta);
-            else if (rawQ.gabarito_letra) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[rawQ.gabarito_letra.toUpperCase()] || 0;
-            else if (rawQ.resposta_correta) ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[rawQ.resposta_correta.toUpperCase()] || 0;
+            // Algoritmo de Embaralhamento Rápido (Fisher-Yates)
+            for (var r = window.questoesDaPartida.length - 1; r > 0; r--) {
+                var s = Math.floor(Math.random() * (r + 1));
+                var aux = window.questoesDaPartida[r];
+                window.questoesDaPartida[r] = window.questoesDaPartida[s];
+                window.questoesDaPartida[s] = aux;
+            }
 
-            const newId = `CUST_CLONE_${Date.now()}_${Math.floor(Math.random()*1000)}`; 
-            const questionToAdd = { 
-                id: newId, 
-                text: rawQ.pergunta || rawQ.enunciado, 
-                category: `${rawQ.disciplina || rawQ.componente} • ${anoSeguro} • Proficiência: ${rawQ.nivel || rawQ.nivel_proficiencia||'Básico'}`, 
-                componente: String(rawQ.disciplina || rawQ.componente||'').toLowerCase(), 
-                ano: anoSeguro.toLowerCase(), 
-                proficiencia: String(rawQ.nivel || rawQ.nivel_proficiencia||'Básico').toLowerCase(), 
-                options: [altA, altB, altC, altD], 
-                answer: ansIdx, 
-                explicacao: rawQ.justificativa_gabarito || rawQ.explicacao||"", 
-                image_url: rawQ.imagem || rawQ.image_url||null, 
-                bncc: rawQ.habilidade_bncc_codigo_referencial || rawQ.bncc||"N/A", 
-                isCustom: true 
-            }; 
-            current.push(questionToAdd); added++; 
-        } 
-    }); 
-    window.writeJSONKey(window.STORAGE_KEYS.customQuestions, current); 
-    if(typeof window.initGameData === 'function') window.initGameData(); 
-    window.renderQuestionBank(); window.closeCommunityBank(); 
-    window.showSystemMessage("Sucesso Absoluto", `${added} questão(ões) do Banco Global foram somadas ao seu banco pessoal! Agora você pode editá-las livremente.`, "success"); 
-};
+            // Mapeamento forçado nas Globais Oficiais da Engine
+            window.isStudentMode = true;
+            window.gameMode = 'single';
+            window.currentTeamIndex = 0;
+            window.teams = [{ 
+                name: pName, 
+                level: 0, 
+                status: 'playing', 
+                helps: { eliminar: false, palpite: false, dica: false, pular: 0 }, 
+                turmaId: null, 
+                students: [], 
+                responseTimes: [] 
+            }];
+            window.activeQuestions = window.questoesDaPartida.slice(0, 16);
+            window.globalQuestionIndex = 0;
 
-window.handleImportFile = function(event) { 
-// ... existing code ...
-```
+            // Telemetria (se existir)
+            if (window.STORAGE_KEYS && typeof window.readJSONKey === 'function' && typeof window.writeJSONKey === 'function') {
+                var todayStr = new Date().toISOString().split('T')[0]; 
+                window.currentStudentTelemetryKey = pName.toLowerCase() + "_" + todayStr;
+                var telemetry = window.readJSONKey(window.STORAGE_KEYS.telemetry, {}); 
+                if (!telemetry[window.currentStudentTelemetryKey]) { telemetry[window.currentStudentTelemetryKey] = { attempts: 0, sent: false }; } 
+                telemetry[window.currentStudentTelemetryKey].attempts++; 
+                window.writeJSONKey(window.STORAGE_KEYS.telemetry, telemetry);
+            }
 
-Feitas essas duas substituições, o jogo estará **blindado contra falhas** e o botão do PIN (junto com a seleção de Modo Treino) vai voltar a voar na velocidade da luz com as suas 2.000 questões!
+            // Ocultar modal/tela de setup
+            var modalAtivo = btn.closest('.fixed');
+            if (modalAtivo) { modalAtivo.classList.remove('flex'); modalAtivo.classList.add('hidden'); }
+            
+            var screenAtual = container.closest('.screen');
+            if (screenAtual) { screenAtual.classList.remove('active'); screenAtual.classList.add('hidden'); }
+            
+            // Disparar o Core do Jogo
+            if (typeof window.fireUpGame === 'function') {
+                window.fireUpGame();
+            } else if (typeof window.loadQuestion === 'function') {
+                var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
+                if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
+                window.loadQuestion();
+            }
+        }
+    });
+});
