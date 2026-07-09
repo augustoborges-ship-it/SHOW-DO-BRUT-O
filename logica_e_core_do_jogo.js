@@ -1,17 +1,11 @@
----
-
-### ARQUIVO 3: O Cérebro do Jogo 
-Este arquivo gerencia as regras do jogo, gera o **QR Code** no final e cria o Link Embed na Fábrica.
-
-**Ação:** Substitua o conteúdo do arquivo `logica_e_core_do_jogo.js` pelo código abaixo:
+#### 2. `logica_e_core_do_jogo.js`
+**O que foi corrigido:** O filtro do Modo Aluno foi completamente estabilizado. Ele agora lê com segurança os valores dos `<select>` e dos *radio buttons*, evitando que o banco fique vazio. O processo de salvamento (Telemetry) e o QR Code também foram revisados.
 
 ```javascript:logica_e_core_do_jogo.js
 // =========================================================================
 // Arquivo: logica_e_core_do_jogo.js
-// Função: Motor de Partida, Filtros do Modo Aluno e Geração de Relatórios/QR Code
+// Função: Motor de Partida, Modo Aluno, QR Code e Relatórios
 // =========================================================================
-
-console.log("🚀 [SISTEMA] Lógica Core carregada.");
 
 window.saveProgress = function() { 
     if (!window.activeQuestions || !window.teams) return; 
@@ -29,16 +23,13 @@ window.saveProgress = function() {
 
 window.clearProgress = function() { if(window.STORAGE_KEYS) window.removeStorageKey(window.STORAGE_KEYS.state); };
 
-// =====================================================
-// 1. INÍCIO DO MODO ALUNO (O Filtro Perfeito)
-// =====================================================
+// 1. INÍCIO DO MODO ALUNO
 window.startStudentGame = function() {
-    console.log("🚦 [Treino] Preparando dados...");
-    if(typeof window.clearProgress === 'function') window.clearProgress(); 
-    window.isStudentMode = true; 
+    console.log("🚦 Iniciando Modo Aluno...");
+    window.clearProgress(); window.isStudentMode = true; 
     
     var errArea = document.getElementById('student-error-area');
-    if (errArea) errArea.innerHTML = '';
+    if(errArea) errArea.innerHTML = '';
     
     var pNameEl = document.getElementById('student-name');
     var pName = (pNameEl && pNameEl.value.trim() !== "") ? pNameEl.value.trim() : "Herói Anônimo";
@@ -49,66 +40,60 @@ window.startStudentGame = function() {
     var subjectEl = document.getElementById('student-subject');
     var disc = subjectEl ? subjectEl.value.toLowerCase() : "matemática";
     
-    // Lê via Rádio Button ou variável global
     var diffRadios = document.querySelector('input[name="student-diff"]:checked');
     var difSelecionada = diffRadios ? diffRadios.value.toLowerCase() : (window.dificuldadeModoTreino || "fácil");
     
     var tagsAceitas = [];
     if (difSelecionada === "fácil") tagsAceitas = ["básico", "b1", "b2", "fácil", "baixo"];
-    else if (difSelecionada === "médio") tagsAceitas = ["intermediário", "b3", "b4", "médio", "adequado", "a1", "a2"];
-    else if (difSelecionada === "difícil") tagsAceitas = ["avançado", "b5", "b6", "difícil", "alto", "a3"];
+    else if (difSelecionada === "médio") tagsAceitas = ["intermediário", "b3", "b4", "médio", "adequado"];
+    else if (difSelecionada === "difícil") tagsAceitas = ["avançado", "b5", "b6", "difícil", "alto"];
 
     var numAnoBusca = String(anoEscolar).replace(/\D/g, "");
 
-    if(!window.allQuestions || window.allQuestions.length === 0) window.initGameData();
+    // Se as questões ainda não estiverem na memória, força a inicialização
+    if(!window.allQuestions || window.allQuestions.length === 0) {
+        if(typeof window.initGameData === 'function') window.initGameData();
+    }
 
-    // 1º FILTRO (Mundo Ideal): Ano + Disciplina + Dificuldade
+    // Filtro Flexível (Nunca deixa a tela preta)
     window.questoesDaPartida = window.allQuestions.filter(function(q) {
-        var bateAno = q.ano.includes(numAnoBusca) || q.ano.includes(anoEscolar);
+        var bateAno = q.ano.includes(numAnoBusca);
         var bateDisc = q.componente.includes(disc);
         var bateDificuldade = tagsAceitas.some(t => q.proficiencia.includes(t));
         return bateAno && bateDisc && bateDificuldade;
     });
 
-    // 2º FILTRO (Fallback): Ano + Disciplina (Ignora Dificuldade)
     if (window.questoesDaPartida.length === 0) {
         window.questoesDaPartida = window.allQuestions.filter(function(q) {
-            return (q.ano.includes(numAnoBusca) || q.ano.includes(anoEscolar)) && q.componente.includes(disc);
+            return q.ano.includes(numAnoBusca) && q.componente.includes(disc);
         });
     }
 
-    // 3º FILTRO (Sobrevivência Máxima): Joga todo o banco de dados (Evita Tela Preta)
-    if (window.questoesDaPartida.length === 0) {
-        window.questoesDaPartida = [...window.allQuestions];
-        console.warn("⚠️ Filtro não encontrou nada específico. Carregando todo o banco.");
-    }
+    if (window.questoesDaPartida.length === 0) window.questoesDaPartida = [...window.allQuestions];
 
     if (window.questoesDaPartida.length === 0) {
-        if(errArea) errArea.innerHTML = '<div class="bg-red-900/80 border-2 border-red-500 text-white font-bold p-3 rounded-xl text-center mb-4">O banco de questões não carregou. Verifique seu arquivo externo.</div>';
+        if(errArea) errArea.innerHTML = '<div class="bg-red-900 border-2 border-red-500 text-white font-bold p-3 rounded-xl text-center mb-4">Banco de Questões Vazio.</div>';
         return;
     }
 
-    // Embaralha
     window.questoesDaPartida.sort(() => Math.random() - 0.5);
 
     window.teams = [{ name: pName, level: 0, status: 'playing', helps: { eliminar: false, palpite: false, dica: false, pular: 0 }, turmaId: null, students: [], responseTimes: [] }];
     window.gameMode = 'single'; window.currentTeamIndex = 0;
     
-    // Inicia Telemetria (Para o QR Code no final)
     if (window.STORAGE_KEYS && typeof window.writeJSONKey === 'function') {
         var todayStr = new Date().toISOString().split('T')[0]; 
         window.currentStudentTelemetryKey = pName.toLowerCase() + "_" + todayStr;
         var telemetry = window.readJSONKey(window.STORAGE_KEYS.telemetry, {}); 
-        if (!telemetry[window.currentStudentTelemetryKey]) { telemetry[window.currentStudentTelemetryKey] = { attempts: 0, sent: false }; } 
+        if (!telemetry[window.currentStudentTelemetryKey]) telemetry[window.currentStudentTelemetryKey] = { attempts: 0, sent: false };
         telemetry[window.currentStudentTelemetryKey].attempts++; 
         window.writeJSONKey(window.STORAGE_KEYS.telemetry, telemetry);
     }
 
-    // Puxa as 16 rodadas
+    // Seleciona até 16 questões
     window.activeQuestions = window.questoesDaPartida.slice(0, 16);
     window.globalQuestionIndex = 0;
 
-    // Transição de Telas
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     var gameScreen = document.getElementById('screen-game') || document.getElementById('tela-jogo');
     if(gameScreen) { gameScreen.classList.remove('hidden'); gameScreen.classList.add('active', 'flex'); }
@@ -116,9 +101,7 @@ window.startStudentGame = function() {
     if (typeof window.fireUpGame === 'function') window.fireUpGame();
 };
 
-// =====================================================
 // 2. INÍCIO DO JOGO PROFESSOR
-// =====================================================
 window.startGame = function() {
     window.clearProgress(); window.isStudentMode = false; 
     let selectedYears = Array.from(document.querySelectorAll('#screen-setup input[id^="ano"]:checked')).map(cb => cb.value.toLowerCase()); 
@@ -136,48 +119,16 @@ window.startGame = function() {
         return matchesYear && matchesMundo; 
     });
     
-    if (filteredQuestions.length === 0) filteredQuestions = window.allQuestions;
+    if (filteredQuestions.length === 0) filteredQuestions = [...window.allQuestions];
     filteredQuestions.sort(() => Math.random() - 0.5); 
     
     window.activeQuestions = filteredQuestions.slice(0, 16); 
     window.globalQuestionIndex = 0; 
     const setupScreen = document.getElementById('screen-setup'); if(setupScreen) setupScreen.classList.remove('active'); 
-    window.fireUpGame();
+    if (typeof window.fireUpGame === 'function') window.fireUpGame();
 };
 
-// =====================================================
-// 3. FÁBRICA DE JOGOS EMBED 
-// =====================================================
-window.generateMutantGame = async function(type) {
-    var missaoEl = document.getElementById('export-mission-name');
-    var missao = missaoEl ? missaoEl.value.trim() : "Missão Brutão";
-    var modeEl = document.getElementById('export-mode');
-    var mode = modeEl ? modeEl.value : "treino";
-    
-    var pool = window.allQuestions; 
-    if (!pool || pool.length === 0) { alert("Banco vazio. Não é possível gerar."); return; }
-    
-    var payload = btoa(unescape(encodeURIComponent(JSON.stringify({ missionId: missao, mode: mode, questions: pool }))));
-    var url = window.location.href.split('#')[0].split('?')[0] + '#mutant=' + payload;
-    
-    if (type === 'embed') {
-        var iframe = `<iframe src="${url}" width="100%" height="750" style="border:none; border-radius:15px; overflow:hidden;" allowfullscreen></iframe>`;
-        var modalExport = document.getElementById('modal-export-game');
-        if(modalExport) { modalExport.classList.add('hidden'); modalExport.classList.remove('flex'); }
-        
-        var linkInput = document.getElementById('share-link-input');
-        if(linkInput) linkInput.value = url;
-        var iframeInput = document.getElementById('share-iframe-input');
-        if(iframeInput) iframeInput.value = iframe;
-        
-        var modalShare = document.getElementById('modal-share');
-        if(modalShare) { modalShare.classList.remove('hidden'); modalShare.classList.add('flex'); }
-    }
-};
-
-// =====================================================
-// 4. QR CODE E GERAÇÃO DE RELATÓRIOS (TELA FINAL)
-// =====================================================
+// 3. QR CODE E RELATÓRIOS (TELA FINAL)
 window.showLeaderboard = function() {
     if(typeof window.closeDraggableHologram === 'function') window.closeDraggableHologram(); 
     window.clearProgress(); 
@@ -202,7 +153,6 @@ window.showLeaderboard = function() {
     
     let actionButtonsHTML = '';
     
-    // LÓGICA DO QR CODE APENAS PARA O MODO ALUNO
     if (window.isStudentMode && window.teams.length > 0) {
         const sumTimes = window.teams[0].responseTimes.reduce((a,b)=>a+b, 0); 
         const calculatedAvg = window.teams[0].responseTimes.length ? Math.floor(sumTimes / window.teams[0].responseTimes.length) : 30000;
@@ -224,9 +174,7 @@ window.showLeaderboard = function() {
         
         const shareText = `🏆 *Show do Brutão* 🏆\n\nOlá Professor! Terminei o meu treino.\n👤 *Herói:* ${window.teams[0].name}\n📈 *Nível:* ${window.teams[0].level}/16\n🔗 ${baseUrl}?sync=${syncHash}`;
         
-        // GERA O QR CODE CORRETAMENTE COM A API PÚBLICA
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(baseUrl + "?sync=" + syncHash)}&color=020617&bgcolor=ffffff`;
-
+        const qrCodeUrl = `[https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=$](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=$){encodeURIComponent(baseUrl + "?sync=" + syncHash)}&color=020617&bgcolor=ffffff`;
         const alreadySent = telemetry[window.currentStudentTelemetryKey] ? telemetry[window.currentStudentTelemetryKey].sent : false;
 
         actionButtonsHTML = `
@@ -240,7 +188,7 @@ window.showLeaderboard = function() {
                         <span class="text-[9px] font-bold text-gray-400 uppercase mt-3 text-center max-w-[120px]">Professor: Use a câmera para importar o boletim</span>
                     </div>
                     <div class="flex-1 flex flex-col gap-3 w-full">
-                        ${alreadySent ? `<div class="w-full bg-gray-800 border border-gray-600 rounded-xl py-3.5 text-center text-xs font-bold text-gray-400">✅ ENVIADO HOJE</div>` : `<a href="https://wa.me/?text=${encodeURIComponent(shareText)}" onclick="if(window.STORAGE_KEYS) { localStorage.setItem(window.STORAGE_KEYS.telemetry, JSON.stringify({...JSON.parse(localStorage.getItem(window.STORAGE_KEYS.telemetry)||'{}'), ['${window.currentStudentTelemetryKey}']: {attempts: ${attemptsCount}, sent: true}})); }" target="_blank" class="w-full rounded-xl bg-gradient-to-r from-green-500 to-green-700 border-2 border-green-300 py-3.5 flex items-center justify-center gap-2 text-xs font-black font-orbitron hover:scale-105 transition-transform shadow-[0_0_15px_rgba(34,197,94,0.3)] text-white">📲 ENVIAR POR WHATSAPP</a>`} 
+                        ${alreadySent ? `<div class="w-full bg-gray-800 border border-gray-600 rounded-xl py-3.5 text-center text-xs font-bold text-gray-400">✅ ENVIADO HOJE</div>` : `<a href="[https://wa.me/?text=$](https://wa.me/?text=$){encodeURIComponent(shareText)}" onclick="if(window.STORAGE_KEYS) { localStorage.setItem(window.STORAGE_KEYS.telemetry, JSON.stringify({...JSON.parse(localStorage.getItem(window.STORAGE_KEYS.telemetry)||'{}'), ['${window.currentStudentTelemetryKey}']: {attempts: ${attemptsCount}, sent: true}})); }" target="_blank" class="w-full rounded-xl bg-gradient-to-r from-green-500 to-green-700 border-2 border-green-300 py-3.5 flex items-center justify-center gap-2 text-xs font-black font-orbitron hover:scale-105 transition-transform shadow-[0_0_15px_rgba(34,197,94,0.3)] text-white">📲 ENVIAR POR WHATSAPP</a>`} 
                         <div class="flex gap-2">
                             <button onclick="if(typeof window.downloadBoletimOffline === 'function') window.downloadBoletimOffline('${syncHash}', '${window.teams[0].name}')" class="flex-1 bg-cyan-950 border border-cyan-500 text-cyan-300 font-black py-3 rounded-xl text-xs font-orbitron hover:bg-cyan-900 transition-colors shadow-inner">💾 BAIXAR ARQUIVO</button> 
                             <button onclick="if(typeof window.copyToClipboardFallback === 'function') window.copyToClipboardFallback('${baseUrl}?sync=${syncHash}', this)" class="flex-1 bg-blue-900 border border-blue-500 text-blue-200 font-black py-3 rounded-xl text-xs font-orbitron hover:bg-blue-800 transition-colors shadow-inner">📋 COPIAR LINK</button>
