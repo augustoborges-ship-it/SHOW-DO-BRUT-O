@@ -13,12 +13,19 @@ window.pendingImportQuestions = [];
 window.renderQuestionBank = function() { 
     const container = window.el('qb-list-container'); 
     if(!container) return;
+
+    // Garante que o banco global seja convertido antes de renderizar a lista.
+    if ((!window.allQuestions || window.allQuestions.length === 0) && typeof window.initGameData === 'function') {
+        window.initGameData();
+    }
+
+    const listaQuestoes = Array.isArray(window.allQuestions) ? window.allQuestions : [];
     container.innerHTML = ''; 
-    if(window.allQuestions.length === 0) { 
-        container.innerHTML = `<div class="text-center text-gray-500 py-10 font-bold">O banco global e pessoal estão vazios.</div>`; 
+    if(listaQuestoes.length === 0) { 
+        container.innerHTML = `<div class="text-center text-gray-500 py-10 font-bold">O banco global e pessoal estão vazios. Verifique se motor_do_banco_de_questoes.js criou window.BANCO_BRUTAO_GLOBAL.</div>`; 
         return; 
     } 
-    window.allQuestions.forEach((q) => { 
+    listaQuestoes.forEach((q) => { 
         const isCust = q.isCustom; 
         const card = window.ce('div'); 
         card.className = "bg-white/5 border border-white/10 rounded-xl p-4 mb-4 hover:bg-white/10 transition-colors shadow-lg"; 

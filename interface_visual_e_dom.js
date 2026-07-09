@@ -381,7 +381,7 @@ window.backToProfDashboardFromReports = function() { window.backToProfDashboard(
 window.backToProfDashboardFromClass = function() { window.backToProfDashboard(); };
 window.goBackToHome = function() { window.qsa('.screen').forEach(s => s.classList.remove('active')); window.el('screen-home').classList.add('active'); };
 window.openClassManager = function() { window.qsa('.screen').forEach(s => s.classList.remove('active')); window.el('screen-class-manager').classList.add('active'); window.renderClassList(); window.updateClassDetailsView(); };
-window.openQuestionBank = function() { window.qsa('.screen').forEach(s => s.classList.remove('active')); window.el('screen-question-bank').classList.add('active'); if(typeof window.renderQuestionBank === 'function') window.renderQuestionBank(); };
+window.openQuestionBank = function() { window.qsa('.screen').forEach(s => s.classList.remove('active')); window.el('screen-question-bank').classList.add('active'); if((!window.allQuestions || window.allQuestions.length === 0) && typeof window.initGameData === 'function') window.initGameData(); if(typeof window.renderQuestionBank === 'function') window.renderQuestionBank(); };
 
 // CORREÇÃO: Dropdown de Turmas Auto-Populável
 window.openReportsInbox = function() { 

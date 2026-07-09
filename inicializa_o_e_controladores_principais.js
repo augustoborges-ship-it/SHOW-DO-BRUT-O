@@ -40,78 +40,134 @@ window.initGameData = function() {
     console.log("⚙️ [Core] Convertendo o Banco de Questões para o Jogo...");
     try {
         if(typeof window.initTurmasData === 'function') window.initTurmasData();
-        var rawBank = window.BANCO_BRUTAO_GLOBAL;
-        
+
+        // Aceita o banco no nome oficial e também em nomes alternativos comuns.
+        var rawBank = window.BANCO_BRUTAO_GLOBAL || window.BANCO_DE_QUESTOES_GLOBAL || window.BANCO_QUESTOES_GLOBAL || window.bancoDeQuestoes || window.questions || [];
+        if (rawBank && !Array.isArray(rawBank) && Array.isArray(rawBank.questoes)) rawBank = rawBank.questoes;
+        if (rawBank && !Array.isArray(rawBank) && Array.isArray(rawBank.items)) rawBank = rawBank.items;
+
         // SISTEMA DE SOBREVIVÊNCIA DE FALHA DE ARQUIVO
         if (!rawBank || !Array.isArray(rawBank) || rawBank.length === 0) {
-            console.error("🚨 ERRO: O arquivo motor_do_banco_de_questoes.js não carregou ou está vazio devido a erro de sintaxe.");
-            // Cria um banco falso robusto de 32 questões para o jogo nunca travar e permitir testar a UI
+            console.error("🚨 ERRO: O arquivo motor_do_banco_de_questoes.js não carregou, está vazio ou não criou window.BANCO_BRUTAO_GLOBAL.");
             rawBank = [];
             for (let i = 0; i < 32; i++) {
                 rawBank.push({
                     "id": "EMERGENCIA_" + i,
                     "disciplina": "Matemática",
                     "ano": "5º Ano",
-                    "nivel": (i % 3 === 0) ? "Básico" : ((i % 3 === 1) ? "Intermediário" : "Avançado"),
-                    "pergunta": `🚨 MODO DE SOBREVIVÊNCIA 🚨 O seu arquivo 'motor_do_banco_de_questoes.js' falhou. Questão Falsa ${i+1}. Quanto é 2 + 2?`,
+                    "nivel": (i % 3 === 0) ? "Básico" : ((i % 3 === 1) ? "Adequado" : "Avançado"),
+                    "pergunta": `🚨 MODO DE SOBREVIVÊNCIA 🚨 O banco global não foi reconhecido. Questão falsa ${i+1}. Quanto é 2 + 2?`,
                     "alternativas": ["1", "2", "4", "8"],
                     "correta": 2,
-                    "justificativa_gabarito": "Este é um fallback automático. O seu JSON original possui algum erro fatal de digitação (vírgulas ou chaves)."
+                    "justificativa_gabarito": "Fallback automático. Verifique se o arquivo motor_do_banco_de_questoes.js existe, foi carregado antes deste arquivo e contém window.BANCO_BRUTAO_GLOBAL = [...]."
                 });
             }
         }
 
-        // Mapeador Otimizado e Flexível
-        window.allQuestions = rawBank.map((q, index) => { 
-            let anoSeguro = String(q.ano || 'Geral');
-            if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) anoSeguro += 'º Ano';
+        function textoSeguro(valor, padrao) {
+            if (valor === undefined || valor === null) return padrao || "";
+            return String(valor);
+        }
 
-            let altA = "", altB = "", altC = "", altD = "";
-            if (Array.isArray(q.alternativas)) {
-                altA = String(q.alternativas[0] || ""); altB = String(q.alternativas[1] || "");
-                altC = String(q.alternativas[2] || ""); altD = String(q.alternativas[3] || "");
-            } else if (q.alternativas && typeof q.alternativas === 'object') {
-                altA = String(q.alternativas.A || q.alternativas.a || ""); altB = String(q.alternativas.B || q.alternativas.b || "");
-                altC = String(q.alternativas.C || q.alternativas.c || ""); altD = String(q.alternativas.D || q.alternativas.d || "");
+        function normalizarAno(ano) {
+            let anoSeguro = textoSeguro(ano, 'Geral').trim();
+            if (anoSeguro !== 'Geral' && !anoSeguro.toLowerCase().includes('ano')) {
+                const num = anoSeguro.replace(/[^0-9]/g, '');
+                anoSeguro = num ? (num + 'º Ano') : anoSeguro;
             }
+            return anoSeguro;
+        }
 
-            let ansIdx = 0;
-            if (q.correta !== undefined && q.correta !== null) {
-                ansIdx = parseInt(q.correta);
-                if (isNaN(ansIdx)) ansIdx = 0;
-            } else if (q.gabarito_letra) {
-                ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[String(q.gabarito_letra).toUpperCase()] || 0;
-            } else if (q.resposta_correta) {
-                ansIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 }[String(q.resposta_correta).toUpperCase()] || 0;
+        function extrairAlternativas(q) {
+            const fonte = q.alternativas || q.opcoes || q.opções || q.options || q.respostas || [];
+            if (Array.isArray(fonte)) {
+                return [0,1,2,3].map(i => textoSeguro(fonte[i], ""));
             }
+            if (fonte && typeof fonte === 'object') {
+                return [
+                    textoSeguro(fonte.A || fonte.a || fonte['0'] || fonte[0], ""),
+                    textoSeguro(fonte.B || fonte.b || fonte['1'] || fonte[1], ""),
+                    textoSeguro(fonte.C || fonte.c || fonte['2'] || fonte[2], ""),
+                    textoSeguro(fonte.D || fonte.d || fonte['3'] || fonte[3], "")
+                ];
+            }
+            return ["", "", "", ""];
+        }
 
-            let comp = String(q.disciplina || q.componente || 'Geral');
-            let profRaw = String(q.nivel || q.nivel_proficiencia || q.grau_interno || 'Básico');
-            let tagsRaw = Array.isArray(q.tags) ? q.tags.join(" ") : "";
+        function indiceResposta(q, alternativas) {
+            const candidatos = [
+                q.correta, q.resposta_correta, q.gabarito_letra, q.gabarito,
+                q.answer, q.answerIndex, q.indice_correto, q.alternativa_correta
+            ];
+
+            for (let i = 0; i < candidatos.length; i++) {
+                let valor = candidatos[i];
+                if (valor === undefined || valor === null || valor === "") continue;
+
+                if (typeof valor === 'number' && isFinite(valor)) {
+                    // Mantém o padrão do projeto: 0=A, 1=B, 2=C, 3=D. Se vier 4, entende como D.
+                    if (valor >= 0 && valor <= 3) return valor;
+                    if (valor >= 1 && valor <= 4) return valor - 1;
+                }
+
+                let s = String(valor).trim();
+                let upper = s.toUpperCase();
+                if ({A:0,B:1,C:2,D:3}[upper] !== undefined) return {A:0,B:1,C:2,D:3}[upper];
+
+                let n = parseInt(s, 10);
+                if (!isNaN(n)) {
+                    if (n >= 0 && n <= 3) return n;
+                    if (n >= 1 && n <= 4) return n - 1;
+                }
+
+                let idxTexto = alternativas.map(a => String(a).trim().toLowerCase()).indexOf(s.toLowerCase());
+                if (idxTexto >= 0) return idxTexto;
+            }
+            return 0;
+        }
+
+        // Mapeador robusto e flexível
+        window.allQuestions = rawBank.map((q, index) => {
+            q = q || {};
+            let anoSeguro = normalizarAno(q.ano || q.serie || q.série || q.ano_escolar);
+            let alternativas = extrairAlternativas(q);
+            let ansIdx = indiceResposta(q, alternativas);
+            let comp = textoSeguro(q.disciplina || q.componente || q.area || q.materia || q.matéria, 'Geral');
+            let profRaw = textoSeguro(q.nivel || q.nível || q.nivel_proficiencia || q.proficiencia || q.proficiência || q.grau_interno || q.dificuldade, 'Básico');
+            let tagsRaw = Array.isArray(q.tags) ? q.tags.join(" ") : textoSeguro(q.tags, "");
             let profCompleta = (profRaw + " " + tagsRaw).toLowerCase();
+            let enunciado = q.pergunta || q.enunciado || q.text || q.texto || q.questao || q.questão || "Sem enunciado";
+            let explicacao = q.justificativa_gabarito || q.feedback_correto || q.explicacao || q.explicação || q.justificativa || q.comentario || "";
+            let codigoBncc = q.habilidade_bncc_codigo_referencial || q.bncc || q.habilidade_bncc || q.habilidade || q.codigo_habilidade || "N/A";
 
-            return { 
-                id: String(q.id || `GLOBAL_${index}`), 
-                text: String(q.pergunta || q.enunciado || "Sem enunciado"), 
-                category: `${comp} • ${anoSeguro} • Proficiência: ${profRaw}`, 
-                componente: comp.toLowerCase(), 
-                ano: anoSeguro.toLowerCase(), 
-                proficiencia: profCompleta, 
-                options: [altA, altB, altC, altD], 
-                answer: ansIdx, 
-                explicacao: String(q.justificativa_gabarito || q.feedback_correto || ""), 
-                image_url: q.imagem || q.image_url || null, 
-                bncc: String(q.habilidade_bncc_codigo_referencial || "N/A"), 
-                isCustom: false 
-            }; 
-        });
+            return {
+                id: textoSeguro(q.id || q.codigo || q.cod || `GLOBAL_${index}`),
+                text: textoSeguro(enunciado, "Sem enunciado"),
+                category: `${comp} • ${anoSeguro} • Proficiência: ${profRaw}`,
+                componente: comp.toLowerCase(),
+                ano: anoSeguro.toLowerCase(),
+                proficiencia: profCompleta,
+                options: alternativas,
+                answer: ansIdx,
+                explicacao: textoSeguro(explicacao, ""),
+                image_url: q.imagem || q.image_url || q.imagem_url || q.url_imagem || null,
+                bncc: textoSeguro(codigoBncc, "N/A"),
+                isCustom: false
+            };
+        }).filter(q => q.text && q.options && q.options.length === 4);
 
         var customQuestions = [];
         if (typeof window.readJSONKey === 'function' && window.STORAGE_KEYS) {
             customQuestions = window.readJSONKey(window.STORAGE_KEYS.customQuestions, []);
+            if (!Array.isArray(customQuestions)) customQuestions = [];
         }
         window.allQuestions = window.allQuestions.concat(customQuestions);
         console.log(`✅ [Core] SUCESSO: ${window.allQuestions.length} questões mapeadas e injetadas no jogo!`);
+
+        if (typeof window.renderQuestionBank === 'function') {
+            var qbScreen = document.getElementById('screen-question-bank');
+            if (qbScreen && qbScreen.classList.contains('active')) window.renderQuestionBank();
+        }
     } catch (e) {
         console.error("🚨 Falha fatal ao converter questões:", e);
     }

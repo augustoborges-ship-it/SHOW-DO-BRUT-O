@@ -1,9 +1,3 @@
----
-
-### ARQUIVO 2: O Cérebro do Jogo (Acaba com o alerta "Banco Vazio")
-Abra o arquivo **`logica_e_core_do_jogo.js`**, apague **TUDO** e cole o código abaixo. Ele possui o Filtro Absoluto: se ele não achar "Fácil", ele busca a disciplina. Se não achar, ele joga o banco todo. O jogo **sempre** vai abrir.
-
-```javascript:logica_e_core_do_jogo.js
 // =========================================================================
 // Arquivo: logica_e_core_do_jogo.js
 // Função: Motor principal de partida, regras, validações e progressão
