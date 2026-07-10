@@ -1,379 +1,2462 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Show do Brutão - Premium AAA+</title>
-    <!-- Tailwind CSS (Motor de Estilos) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fontes Premium -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Montserrat:wght@700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-    
+    <!-- Estilos compilados localmente: a interface não depende de CDN. -->
+
     <script>
-        const APP_CONFIG = window.APP_CONFIG = Object.freeze({
-            storagePrefix: 'brutao_',
-            assetsBase: 'https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/'
-        });
-        const STORAGE_KEYS = window.STORAGE_KEYS = Object.freeze({
-            state: `${APP_CONFIG.storagePrefix}premium_state`,
-            customQuestions: `${APP_CONFIG.storagePrefix}custom_qs`,
-            classes: `${APP_CONFIG.storagePrefix}classes`,
-            reports: `${APP_CONFIG.storagePrefix}reports`,
-            telemetry: `${APP_CONFIG.storagePrefix}telemetry`,
-            lgpd: `${APP_CONFIG.storagePrefix}lgpd_accepted`
-        });
-        function el(id) { return document.getElementById(id); }
-        function qs(selector, scope = document) { return scope.querySelector(selector); }
-        function qsa(selector, scope = document) { return scope.querySelectorAll(selector); }
-        function ce(tagName) { return document.createElement(tagName); }
-        function asset(fileName) { return `${APP_CONFIG.assetsBase}${fileName}`; }
-        function readJSONKey(key, fallback) {
-            try {
-                const raw = localStorage.getItem(key);
-                return raw ? JSON.parse(raw) : fallback;
-            } catch (err) {
-                console.warn('Storage local inválido, usando fallback seguro:', key, err);
-                return fallback;
-            }
+      const APP_CONFIG = (window.APP_CONFIG = Object.freeze({
+        storagePrefix: "brutao_",
+        assetsBase:
+          "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/",
+      }));
+      const STORAGE_KEYS = (window.STORAGE_KEYS = Object.freeze({
+        state: `${APP_CONFIG.storagePrefix}premium_state`,
+        customQuestions: `${APP_CONFIG.storagePrefix}custom_qs`,
+        classes: `${APP_CONFIG.storagePrefix}classes`,
+        reports: `${APP_CONFIG.storagePrefix}reports`,
+        telemetry: `${APP_CONFIG.storagePrefix}telemetry`,
+        lgpd: `${APP_CONFIG.storagePrefix}lgpd_accepted`,
+      }));
+      function el(id) {
+        return document.getElementById(id);
+      }
+      function qs(selector, scope = document) {
+        return scope.querySelector(selector);
+      }
+      function qsa(selector, scope = document) {
+        return scope.querySelectorAll(selector);
+      }
+      function ce(tagName) {
+        return document.createElement(tagName);
+      }
+      function asset(fileName) {
+        return `${APP_CONFIG.assetsBase}${fileName}`;
+      }
+      function readJSONKey(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch (err) {
+          console.warn(
+            "Storage local inválido, usando fallback seguro:",
+            key,
+            err,
+          );
+          return fallback;
         }
-        function writeJSONKey(key, value) {
-            try {
-                localStorage.setItem(key, JSON.stringify(value));
-                return true;
-            } catch (err) {
-                console.warn('Falha ao salvar no storage local:', key, err);
-                return false;
-            }
+      }
+      function writeJSONKey(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (err) {
+          console.warn("Falha ao salvar no storage local:", key, err);
+          return false;
         }
-        function removeStorageKey(key) {
-            try { localStorage.removeItem(key); } catch (err) { console.warn('Falha ao remover storage local:', key, err); }
+      }
+      function removeStorageKey(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (err) {
+          console.warn("Falha ao remover storage local:", key, err);
         }
-        window.isIntroSkipped = false;
-        function skipIntro() { if (window.isIntroSkipped) return; window.isIntroSkipped = true; const overlay = el('intro-overlay'); if (overlay) { overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; }, 1000); } }
-        setTimeout(skipIntro, 8500); window.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'Enter') skipIntro(); });
+      }
+      window.isIntroSkipped = false;
+      function skipIntro() {
+        if (window.isIntroSkipped) return;
+        window.isIntroSkipped = true;
+        const overlay = el("intro-overlay");
+        if (overlay) {
+          overlay.style.opacity = "0";
+          setTimeout(() => {
+            overlay.style.display = "none";
+          }, 1000);
+        }
+      }
+      setTimeout(skipIntro, 5600);
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.code === "Enter") skipIntro();
+      });
     </script>
-    
+
     <style>
-        :root{--gold-light:#FFDF73;--gold-mid:#D4AF37;--gold-dark:#996515}
-        body{font-family:'Inter',sans-serif;background-color:#000;overflow:hidden;touch-action:manipulation}
-        .screen{display:none !important;position:absolute;inset:0;width:100vw;height:100vh}
-        .screen.active{display:flex !important;flex-direction:column}
-        .layer-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;transition:all 2s ease}
-        .text-gold-premium{background:linear-gradient(to bottom,#FFFDE4 0%,#FFDF73 25%,#D4AF37 50%,#996515 75%,#FFDF73 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-transform:uppercase;letter-spacing:2px;font-family:'Montserrat',sans-serif;filter:drop-shadow(0px 8px 0px #5c3c00) drop-shadow(0px 25px 30px rgba(0,0,0,0.9));-webkit-text-stroke:1.5px rgba(255,255,255,0.6)}
-        .text-shadow-tv{text-shadow:2px 2px 4px rgba(0,0,0,0.9),0px 0px 20px rgba(0,0,0,0.5)}
-        .btn-alternative{background:linear-gradient(to bottom,#d92b2b,#8a0c0c);border:2px solid #ff6b6b;box-shadow:inset 0 8px 10px rgba(255,255,255,0.2),0 10px 20px rgba(0,0,0,0.6);transition:all 0.2s ease}
-        .btn-alternative:hover{transform:scale(1.01);filter:brightness(1.1);box-shadow:inset 0 8px 10px rgba(255,255,255,0.2),0 0 15px rgba(255,223,115,0.4)}
-        .btn-alternative.correct{background:linear-gradient(to bottom,#2bd956,#0c8a24) !important;border-color:#6bff89 !important;box-shadow:inset 0 8px 10px rgba(255,255,255,0.3),0 0 40px rgba(43,217,86,0.8) !important}
-        .btn-alternative.wrong{background:linear-gradient(to bottom,#4a4a4a,#202020) !important;border-color:#6a6a6a !important;color:#888 !important}
-        .flip-card{perspective:1000px}
-        .flip-card-inner{transition:transform 0.8s cubic-bezier(0.175,0.885,0.32,1.275);transform-style:preserve-3d}
-        .flip-card.flipped .flip-card-inner{transform:rotateY(180deg)}
-        .flip-card-front,.flip-card-back{backface-visibility:hidden;-webkit-backface-visibility:hidden}
-        .flip-card-back{transform:rotateY(180deg)}
-        .shimmer-light{position:absolute;top:0;left:-150%;width:50%;height:100%;background:linear-gradient(to right,rgba(255,255,255,0) 0%,rgba(255,255,255,0.5) 50%,rgba(255,255,255,0) 100%);transform:skewX(-25deg);animation:shimmer-sweep 3s infinite;pointer-events:none;z-index:1}
-        @keyframes shimmer-sweep{0%{left:-150%}15%{left:200%}100%{left:200%}}
-        .tv-overlay{position:fixed;inset:0;pointer-events:none;z-index:9999;background:radial-gradient(circle_at_center,transparent 40%,rgba(0,0,0,0.6) 120%),repeating-linear-gradient(to bottom,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px)}
-        .ambient-studio-light{position:fixed;top:-20vh;left:20vw;width:60vw;height:40vh;background:radial-gradient(ellipse at center,rgba(34,211,238,0.08) 0%,transparent 70%);pointer-events:none;z-index:9998;animation:pulse-studio-light 5s ease-in-out infinite alternate}
-        @keyframes pulse-studio-light{0%{opacity:0.4;transform:scale(1)}100%{opacity:1;transform:scale(1.1)}}
-        .spotlight{position:absolute;top:-10vh;width:15vw;height:120vh;transform-origin:top center;pointer-events:none;z-index:1;filter:blur(10px);mix-blend-mode:screen}
-        .spot-white{background:linear-gradient(180deg,rgba(255,255,255,0.1) 0%,transparent 100%);transition:background 1s ease}
-        .spot-tension{background:linear-gradient(180deg,rgba(250,204,21,0.25) 0%,transparent 100%);transition:background 1.5s ease}
-        .spot-green{background:linear-gradient(180deg,rgba(34,197,94,0.3) 0%,transparent 100%);transition:background 0.5s ease}
-        .spot-red{background:linear-gradient(180deg,rgba(239,68,68,0.3) 0%,transparent 100%);transition:background 0.5s ease}
-        .spot-left{left:10vw;animation:sweep-left 12s ease-in-out infinite alternate}
-        .spot-right{right:10vw;animation:sweep-right 15s ease-in-out infinite alternate}
-        @keyframes sweep-left{0%{transform:rotate(-30deg) scaleY(1);opacity:0.3}50%{opacity:0.6}100%{transform:rotate(45deg) scaleY(1.2);opacity:0.3}}
-        @keyframes sweep-right{0%{transform:rotate(30deg) scaleY(1.2);opacity:0.3}50%{opacity:0.6}100%{transform:rotate(-45deg) scaleY(1);opacity:0.3}}
-        .timer-panic{animation:panic-beat 1s infinite;border-color:#ef4444 !important;box-shadow:0 0 30px rgba(239,68,68,0.8),inset 0 0 15px rgba(239,68,68,0.5) !important}
-        @keyframes panic-beat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-        @keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.02);filter:drop-shadow(0 15px 25px rgba(0,0,0,0.6))}}
-        .animate-breathe{animation:breathe 4s ease-in-out infinite}
-        @keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-15px) rotate(-2deg)}20%,40%,60%,80%{transform:translateX(15px) rotate(2deg)}}
-        .animate-shake{animation:shake 0.7s cubic-bezier(.36,.07,.19,.97) both;border-color:#ef4444 !important;box-shadow:0 0 50px rgba(239,68,68,0.8) !important}
-        .drama-zoom{transform:scale(1.08) translateY(15px);transition:transform 4s cubic-bezier(0.25,0.46,0.45,0.94);z-index:60}
-        .dim-bg-extreme{filter:brightness(0.15) grayscale(0.8);transition:filter 2.5s ease}
-        .tension-dim{filter:brightness(0.3) grayscale(0.5);transition:filter 1s ease-in-out}
-        .tension-focus{z-index:60 !important;filter:brightness(1.2) drop-shadow(0 0 20px rgba(250,204,21,0.8)) !important;transform:scale(1.05) !important;transition:all 0.5s ease}
-        .pulse-answer{animation:panic-beat 0.8s infinite;border-color:#facc15 !important;box-shadow:0 0 40px rgba(250,204,21,0.8),inset 0 0 20px rgba(250,204,21,0.5) !important;z-index:70 !important;transform:scale(1.05);transition:all 0.3s}
-        @keyframes flash-green{0%{background-color:#ffffff;filter:brightness(3) contrast(2);transform:scale(1.1);box-shadow:0 0 100px #ffffff}100%{background-color:#0c8a24;transform:scale(1)}}
-        .flash-correct{animation:flash-green 1s ease-out forwards !important}
-        @keyframes pulse-fast{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.02);filter:brightness(1.3)}}
-        .animate-suspense{animation:pulse-fast 0.45s infinite;border-color:#FFDF73 !important;box-shadow:0 0 30px rgba(255,223,115,0.8),inset 0 0 15px rgba(255,223,115,0.5) !important;z-index:40 !important}
-        @keyframes q-slide-in{0%{opacity:0;transform:translateX(40px) scale(0.98);filter:blur(8px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}}
-        .animate-q-slide{animation:q-slide-in 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards}
-        @keyframes award-pop-anim{0%{transform:scale(1)}50%{transform:scale(1.4);color:#fff;text-shadow:0 0 30px #FFDF73}100%{transform:scale(1)}}
-        .animate-award-pop{animation:award-pop-anim 0.8s ease-out forwards}
-        .fade-out-wrong-btn{opacity:0.15 !important;filter:grayscale(100%) blur(3px) !important;transform:scale(0.9) !important;transition:all 1s ease !important;pointer-events:none}
-        @keyframes eliminate-suspense{0%{opacity:1;filter:brightness(1)}15%{opacity:0.3;filter:brightness(1.8) blur(1px);transform:scale(0.98)}30%{opacity:1;filter:brightness(1);transform:scale(1)}45%{opacity:0.3;filter:brightness(1.8) blur(1px);transform:scale(0.98)}60%{opacity:1;filter:brightness(1);transform:scale(1)}80%{opacity:1;transform:scale(1);filter:brightness(1)}100%{opacity:0;transform:scale(0.85);filter:blur(4px);visibility:hidden}}
-        .animate-eliminate{animation:eliminate-suspense 2.5s ease-in-out forwards !important;pointer-events:none !important}
-        @keyframes spin-slow{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
-        .animate-spin-slow{animation:spin-slow 30s linear infinite}
-        .confetti-piece{position:absolute;will-change:transform,top,opacity}
-        #intro-overlay{background:radial-gradient(circle at center,#0f172a 0%,#020617 100%)}
-        .intro-logo-epic{opacity:0;animation:logo-epic-vanish 4.5s cubic-bezier(0.25,1,0.5,1) forwards;will-change:transform,opacity,filter}
-        @keyframes logo-epic-vanish{0%{opacity:0;transform:scale(0.6) translateY(20px);filter:blur(15px)}15%{opacity:1;transform:scale(1) translateY(0);filter:blur(0px) drop-shadow(0 15px 30px rgba(34,211,238,0.3))}60%{opacity:1;transform:scale(1.05);filter:blur(0px) drop-shadow(0 25px 45px rgba(34,211,238,0.5))}70%{opacity:1;transform:scale(1.15);filter:brightness(1.8) blur(3px) drop-shadow(0 0 50px rgba(34,211,238,1))}78%{opacity:1;transform:scaleX(2.5) scaleY(0.02);filter:brightness(3) blur(10px)}82%,100%{opacity:0;transform:scaleX(0) scaleY(0);filter:blur(0);display:none}}
-        .games-letter{opacity:0;display:inline-block;animation:letter-jump-pop 1s cubic-bezier(0.34,1.56,0.64,1) forwards}
-        @keyframes letter-jump-pop{0%{opacity:0;transform:translateY(120px) scaleY(2) scaleX(0.5);filter:blur(10px)}50%{opacity:1;transform:translateY(-20px) scaleY(0.9) scaleX(1.1);filter:blur(0px)}75%{transform:translateY(10px) scaleY(1.05) scaleX(0.95)}100%{opacity:1;transform:translateY(0) scale(1) scaleX(1);filter:drop-shadow(0 0 25px rgba(34,211,238,0.8))}}
-        .intro-subtitle-reveal{opacity:0;animation:subtitle-fade-up 1.5s ease-out forwards}
-        @keyframes subtitle-fade-up{0%{opacity:0;transform:translateY(20px);filter:blur(8px);letter-spacing:0.8em}100%{opacity:1;transform:translateY(0);filter:blur(0);letter-spacing:0.5em}}
-        @keyframes intro-pulse-light{0%,100%{opacity:0.3;transform:scale(0.9)}50%{opacity:0.7;transform:scale(1.2)}}
-        .animate-intro-pulse-light{animation:intro-pulse-light 4s ease-in-out infinite}
-        @keyframes float-holo{0%,100%{transform:translateY(0);filter:drop-shadow(0 0 15px rgba(34,211,238,0.5))}50%{transform:translateY(-6px);filter:drop-shadow(0 0 25px rgba(34,211,238,0.9))}}
-        .animate-holo{animation:float-holo 3.5s ease-in-out infinite}
-        @keyframes blink-cursor{from,to{border-color:transparent}50%{border-color:#FFDF73}}
-        .typing-cursor{border-right:3px solid #FFDF73;padding-right:4px;animation:blink-cursor 0.75s step-end infinite}
-        @keyframes flash-bang{0%{opacity:0.8}100%{opacity:0}}
-        .do-flash{animation:flash-bang 0.4s ease-out}
-        @keyframes float-up-fade{0%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-80px) scale(1.5)}}
-        .floating-score{position:absolute;left:50%;top:-20px;color:#facc15;font-weight:900;font-family:'Orbitron',sans-serif;font-size:2rem;z-index:100;animation:float-up-fade 2s ease-out forwards;pointer-events:none;text-shadow:0px 4px 10px rgba(0,0,0,0.8)}
-        .vignette-panic{background:radial-gradient(ellipse at center,transparent 30%,rgba(239,68,68,0.6) 100%) !important;animation:pulse-fast 1s infinite}
-        ::-webkit-scrollbar{width:8px}
-        ::-webkit-scrollbar-track{background:rgba(0,0,0,0.3);border-radius:4px}
-        ::-webkit-scrollbar-thumb{background:rgba(34,211,238,0.5);border-radius:4px}
-        ::-webkit-scrollbar-thumb:hover{background:rgba(34,211,238,0.8)}
-        @media print{
-            body,html{background:#fff !important;color:#000 !important;overflow:visible !important}
-            .screen{display:none !important}
-            #screen-reports{display:flex !important;position:static !important;width:100% !important;height:auto !important;background:#fff !important}
-            .relative.z-20{max-w-full !important;height:auto !important;background:transparent !important;border:none !important;box-shadow:none !important}
-            .p-6.border-b,.shrink-0,button,input,select{display:none !important}
-            #reports-analytics-panel{display:block !important;border-color:#000 !important;color:#000 !important;background:transparent !important;margin-bottom:20px !important}
-            #reports-list-container{display:block !important}
-            .bg-white\/5,.bg-black\/40{background:#f3f4f6 !important;color:#000 !important;border:1px solid #d1d5db !important;margin-bottom:1rem !important;page-break-inside:avoid}
-            .text-white,.text-cyan-300,.text-green-300{color:#000 !important;text-shadow:none !important}
-            .fixed,.tv-overlay,.ambient-studio-light{display:none !important}
+      :root {
+        --gold-light: #ffdf73;
+        --gold-mid: #d4af37;
+        --gold-dark: #996515;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #000;
+        overflow: hidden;
+        touch-action: manipulation;
+      }
+      .screen {
+        display: none !important;
+        position: absolute;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+      .screen.active {
+        display: flex !important;
+        flex-direction: column;
+      }
+      .layer-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+        transition: all 2s ease;
+      }
+      .text-gold-premium {
+        background: linear-gradient(
+          to bottom,
+          #fffde4 0%,
+          #ffdf73 25%,
+          #d4af37 50%,
+          #996515 75%,
+          #ffdf73 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-family: "Montserrat", sans-serif;
+        filter: drop-shadow(0px 8px 0px #5c3c00)
+          drop-shadow(0px 25px 30px rgba(0, 0, 0, 0.9));
+        -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.6);
+      }
+      .text-shadow-tv {
+        text-shadow:
+          2px 2px 4px rgba(0, 0, 0, 0.9),
+          0px 0px 20px rgba(0, 0, 0, 0.5);
+      }
+      .btn-alternative {
+        background: linear-gradient(to bottom, #d92b2b, #8a0c0c);
+        border: 2px solid #ff6b6b;
+        box-shadow:
+          inset 0 8px 10px rgba(255, 255, 255, 0.2),
+          0 10px 20px rgba(0, 0, 0, 0.6);
+        transition: all 0.2s ease;
+      }
+      .btn-alternative:hover {
+        transform: scale(1.01);
+        filter: brightness(1.1);
+        box-shadow:
+          inset 0 8px 10px rgba(255, 255, 255, 0.2),
+          0 0 15px rgba(255, 223, 115, 0.4);
+      }
+      .btn-alternative.correct {
+        background: linear-gradient(to bottom, #2bd956, #0c8a24) !important;
+        border-color: #6bff89 !important;
+        box-shadow:
+          inset 0 8px 10px rgba(255, 255, 255, 0.3),
+          0 0 40px rgba(43, 217, 86, 0.8) !important;
+      }
+      .btn-alternative.wrong {
+        background: linear-gradient(to bottom, #4a4a4a, #202020) !important;
+        border-color: #6a6a6a !important;
+        color: #888 !important;
+      }
+      .flip-card {
+        perspective: 1000px;
+      }
+      .flip-card-inner {
+        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+      }
+      .flip-card.flipped .flip-card-inner {
+        transform: rotateY(180deg);
+      }
+      .flip-card-front,
+      .flip-card-back {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .flip-card-back {
+        transform: rotateY(180deg);
+      }
+      .shimmer-light {
+        position: absolute;
+        top: 0;
+        left: -150%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.5) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        transform: skewX(-25deg);
+        animation: shimmer-sweep 3s infinite;
+        pointer-events: none;
+        z-index: 1;
+      }
+      @keyframes shimmer-sweep {
+        0% {
+          left: -150%;
         }
-        @keyframes zoom-in-drama {
-            0% { transform: scale(1) translate(0, 0); filter: brightness(1) contrast(1) saturate(1); }
-            100% { transform: scale(1.3) translate(-2%, 2%); filter: brightness(1.15) contrast(1.1) saturate(1.2); }
+        15% {
+          left: 200%;
         }
-        .cinematic-zoom { animation: zoom-in-drama 5s linear forwards; }
-        @keyframes camera-shake-tense {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(0.5px, 0.5px) rotate(0.1deg); }
-            50% { transform: translate(-0.5px, -0.2px) rotate(-0.1deg); }
-            75% { transform: translate(-0.2px, 0.5px) rotate(0.1deg); }
+        100% {
+          left: 200%;
         }
-        .animate-camera-shake { animation: camera-shake-tense 0.8s ease-in-out infinite; }
-        @keyframes tense-breathing {
-            0%, 100% { transform: translateY(0) scaleY(1) scaleX(1); }
-            50% { transform: translateY(-2px) scaleY(1.015) scaleX(0.995); }
+      }
+      .tv-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+        background: radial-gradient(
+            circle_at_center,
+            transparent 40%,
+            rgba(0, 0, 0, 0.6) 120%
+          ),
+          repeating-linear-gradient(
+            to bottom,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.05) 2px,
+            rgba(0, 0, 0, 0.05) 4px
+          );
+      }
+      .ambient-studio-light {
+        position: fixed;
+        top: -20vh;
+        left: 20vw;
+        width: 60vw;
+        height: 40vh;
+        background: radial-gradient(
+          ellipse at center,
+          rgba(34, 211, 238, 0.08) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 9998;
+        animation: pulse-studio-light 5s ease-in-out infinite alternate;
+      }
+      @keyframes pulse-studio-light {
+        0% {
+          opacity: 0.4;
+          transform: scale(1);
         }
-        .animate-tense-breathing { animation: tense-breathing 1.8s ease-in-out infinite; transform-origin: center bottom; }
-        .sweat-drop {
-            position: absolute; width: 8px; height: 14px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(200,230,255,0.4) 100%);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            box-shadow: inset -1px -1px 2px rgba(0,0,0,0.1), 0 2px 3px rgba(0,0,0,0.2);
-            opacity: 0; z-index: 20; filter: blur(0.3px);
+        100% {
+          opacity: 1;
+          transform: scale(1.1);
         }
-        @keyframes sweat-trickle {
-            0% { opacity: 0; transform: translateY(0) scale(0.5); }
-            15% { opacity: 1; transform: translateY(10px) scale(1); }
-            85% { opacity: 0.8; transform: translateY(60px) scale(0.9); }
-            100% { opacity: 0; transform: translateY(75px) scale(0.5); }
+      }
+      .spotlight {
+        position: absolute;
+        top: -10vh;
+        width: 15vw;
+        height: 120vh;
+        transform-origin: top center;
+        pointer-events: none;
+        z-index: 1;
+        filter: blur(10px);
+        mix-blend-mode: screen;
+      }
+      .spot-white {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 100%
+        );
+        transition: background 1s ease;
+      }
+      .spot-tension {
+        background: linear-gradient(
+          180deg,
+          rgba(250, 204, 21, 0.25) 0%,
+          transparent 100%
+        );
+        transition: background 1.5s ease;
+      }
+      .spot-green {
+        background: linear-gradient(
+          180deg,
+          rgba(34, 197, 94, 0.3) 0%,
+          transparent 100%
+        );
+        transition: background 0.5s ease;
+      }
+      .spot-red {
+        background: linear-gradient(
+          180deg,
+          rgba(239, 68, 68, 0.3) 0%,
+          transparent 100%
+        );
+        transition: background 0.5s ease;
+      }
+      .spot-left {
+        left: 10vw;
+        animation: sweep-left 12s ease-in-out infinite alternate;
+      }
+      .spot-right {
+        right: 10vw;
+        animation: sweep-right 15s ease-in-out infinite alternate;
+      }
+      @keyframes sweep-left {
+        0% {
+          transform: rotate(-30deg) scaleY(1);
+          opacity: 0.3;
         }
-        .cinematic-img {
-            position: absolute; bottom: 0; right: 0; width: 100%; height: 100%;
-            object-fit: contain; object-position: bottom; opacity: 0;
-            transition: opacity 1.5s cubic-bezier(0.25, 0.1, 0.25, 1); will-change: opacity;
+        50% {
+          opacity: 0.6;
         }
+        100% {
+          transform: rotate(45deg) scaleY(1.2);
+          opacity: 0.3;
+        }
+      }
+      @keyframes sweep-right {
+        0% {
+          transform: rotate(30deg) scaleY(1.2);
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
+        100% {
+          transform: rotate(-45deg) scaleY(1);
+          opacity: 0.3;
+        }
+      }
+      .timer-panic {
+        animation: panic-beat 1s infinite;
+        border-color: #ef4444 !important;
+        box-shadow:
+          0 0 30px rgba(239, 68, 68, 0.8),
+          inset 0 0 15px rgba(239, 68, 68, 0.5) !important;
+      }
+      @keyframes panic-beat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.15);
+        }
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+        }
+        50% {
+          transform: translateY(-10px) scale(1.02);
+          filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.6));
+        }
+      }
+      .animate-breathe {
+        animation: breathe 4s ease-in-out infinite;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        10%,
+        30%,
+        50%,
+        70%,
+        90% {
+          transform: translateX(-15px) rotate(-2deg);
+        }
+        20%,
+        40%,
+        60%,
+        80% {
+          transform: translateX(15px) rotate(2deg);
+        }
+      }
+      .animate-shake {
+        animation: shake 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 50px rgba(239, 68, 68, 0.8) !important;
+      }
+      .drama-zoom {
+        transform: scale(1.08) translateY(15px);
+        transition: transform 4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        z-index: 60;
+      }
+      .dim-bg-extreme {
+        filter: brightness(0.15) grayscale(0.8);
+        transition: filter 2.5s ease;
+      }
+      .tension-dim {
+        filter: brightness(0.3) grayscale(0.5);
+        transition: filter 1s ease-in-out;
+      }
+      .tension-focus {
+        z-index: 60 !important;
+        filter: brightness(1.2) drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)) !important;
+        transform: scale(1.05) !important;
+        transition: all 0.5s ease;
+      }
+      .pulse-answer {
+        animation: panic-beat 0.8s infinite;
+        border-color: #facc15 !important;
+        box-shadow:
+          0 0 40px rgba(250, 204, 21, 0.8),
+          inset 0 0 20px rgba(250, 204, 21, 0.5) !important;
+        z-index: 70 !important;
+        transform: scale(1.05);
+        transition: all 0.3s;
+      }
+      @keyframes flash-green {
+        0% {
+          background-color: #ffffff;
+          filter: brightness(3) contrast(2);
+          transform: scale(1.1);
+          box-shadow: 0 0 100px #ffffff;
+        }
+        100% {
+          background-color: #0c8a24;
+          transform: scale(1);
+        }
+      }
+      .flash-correct {
+        animation: flash-green 1s ease-out forwards !important;
+      }
+      @keyframes pulse-fast {
+        0%,
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+        }
+        50% {
+          transform: scale(1.02);
+          filter: brightness(1.3);
+        }
+      }
+      .animate-suspense {
+        animation: pulse-fast 0.45s infinite;
+        border-color: #ffdf73 !important;
+        box-shadow:
+          0 0 30px rgba(255, 223, 115, 0.8),
+          inset 0 0 15px rgba(255, 223, 115, 0.5) !important;
+        z-index: 40 !important;
+      }
+      @keyframes q-slide-in {
+        0% {
+          opacity: 0;
+          transform: translateX(40px) scale(0.98);
+          filter: blur(8px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+          filter: blur(0);
+        }
+      }
+      .animate-q-slide {
+        animation: q-slide-in 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+          forwards;
+      }
+      @keyframes award-pop-anim {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.4);
+          color: #fff;
+          text-shadow: 0 0 30px #ffdf73;
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .animate-award-pop {
+        animation: award-pop-anim 0.8s ease-out forwards;
+      }
+      .fade-out-wrong-btn {
+        opacity: 0.15 !important;
+        filter: grayscale(100%) blur(3px) !important;
+        transform: scale(0.9) !important;
+        transition: all 1s ease !important;
+        pointer-events: none;
+      }
+      @keyframes eliminate-suspense {
+        0% {
+          opacity: 1;
+          filter: brightness(1);
+        }
+        15% {
+          opacity: 0.3;
+          filter: brightness(1.8) blur(1px);
+          transform: scale(0.98);
+        }
+        30% {
+          opacity: 1;
+          filter: brightness(1);
+          transform: scale(1);
+        }
+        45% {
+          opacity: 0.3;
+          filter: brightness(1.8) blur(1px);
+          transform: scale(0.98);
+        }
+        60% {
+          opacity: 1;
+          filter: brightness(1);
+          transform: scale(1);
+        }
+        80% {
+          opacity: 1;
+          transform: scale(1);
+          filter: brightness(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.85);
+          filter: blur(4px);
+          visibility: hidden;
+        }
+      }
+      .animate-eliminate {
+        animation: eliminate-suspense 2.5s ease-in-out forwards !important;
+        pointer-events: none !important;
+      }
+      @keyframes spin-slow {
+        from {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+      .animate-spin-slow {
+        animation: spin-slow 30s linear infinite;
+      }
+      .confetti-piece {
+        position: absolute;
+        will-change: transform, top, opacity;
+      }
+      #intro-overlay {
+        background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      }
+      .intro-logo-epic {
+        opacity: 0;
+        animation: logo-epic-vanish 4.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        will-change: transform, opacity, filter;
+      }
+      @keyframes logo-epic-vanish {
+        0% {
+          opacity: 0;
+          transform: scale(0.6) translateY(20px);
+          filter: blur(15px);
+        }
+        15% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+          filter: blur(0px) drop-shadow(0 15px 30px rgba(34, 211, 238, 0.3));
+        }
+        60% {
+          opacity: 1;
+          transform: scale(1.05);
+          filter: blur(0px) drop-shadow(0 25px 45px rgba(34, 211, 238, 0.5));
+        }
+        70% {
+          opacity: 1;
+          transform: scale(1.15);
+          filter: brightness(1.8) blur(3px)
+            drop-shadow(0 0 50px rgba(34, 211, 238, 1));
+        }
+        78% {
+          opacity: 1;
+          transform: scaleX(2.5) scaleY(0.02);
+          filter: brightness(3) blur(10px);
+        }
+        82%,
+        100% {
+          opacity: 0;
+          transform: scaleX(0) scaleY(0);
+          filter: blur(0);
+          display: none;
+        }
+      }
+      .games-letter {
+        opacity: 0;
+        display: inline-block;
+        animation: letter-jump-pop 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+      @keyframes letter-jump-pop {
+        0% {
+          opacity: 0;
+          transform: translateY(120px) scaleY(2) scaleX(0.5);
+          filter: blur(10px);
+        }
+        50% {
+          opacity: 1;
+          transform: translateY(-20px) scaleY(0.9) scaleX(1.1);
+          filter: blur(0px);
+        }
+        75% {
+          transform: translateY(10px) scaleY(1.05) scaleX(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1) scaleX(1);
+          filter: drop-shadow(0 0 25px rgba(34, 211, 238, 0.8));
+        }
+      }
+      .intro-subtitle-reveal {
+        opacity: 0;
+        animation: subtitle-fade-up 1.5s ease-out forwards;
+      }
+      @keyframes subtitle-fade-up {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+          filter: blur(8px);
+          letter-spacing: 0.8em;
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
+          letter-spacing: 0.5em;
+        }
+      }
+      @keyframes intro-pulse-light {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 0.7;
+          transform: scale(1.2);
+        }
+      }
+      .animate-intro-pulse-light {
+        animation: intro-pulse-light 4s ease-in-out infinite;
+      }
+      @keyframes float-holo {
+        0%,
+        100% {
+          transform: translateY(0);
+          filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.5));
+        }
+        50% {
+          transform: translateY(-6px);
+          filter: drop-shadow(0 0 25px rgba(34, 211, 238, 0.9));
+        }
+      }
+      .animate-holo {
+        animation: float-holo 3.5s ease-in-out infinite;
+      }
+      @keyframes blink-cursor {
+        from,
+        to {
+          border-color: transparent;
+        }
+        50% {
+          border-color: #ffdf73;
+        }
+      }
+      .typing-cursor {
+        border-right: 3px solid #ffdf73;
+        padding-right: 4px;
+        animation: blink-cursor 0.75s step-end infinite;
+      }
+      @keyframes flash-bang {
+        0% {
+          opacity: 0.8;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      .do-flash {
+        animation: flash-bang 0.4s ease-out;
+      }
+      @keyframes float-up-fade {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, 0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -80px) scale(1.5);
+        }
+      }
+      .floating-score {
+        position: absolute;
+        left: 50%;
+        top: -20px;
+        color: #facc15;
+        font-weight: 900;
+        font-family: "Orbitron", sans-serif;
+        font-size: 2rem;
+        z-index: 100;
+        animation: float-up-fade 2s ease-out forwards;
+        pointer-events: none;
+        text-shadow: 0px 4px 10px rgba(0, 0, 0, 0.8);
+      }
+      .vignette-panic {
+        background: radial-gradient(
+          ellipse at center,
+          transparent 30%,
+          rgba(239, 68, 68, 0.6) 100%
+        ) !important;
+        animation: pulse-fast 1s infinite;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(34, 211, 238, 0.5);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(34, 211, 238, 0.8);
+      }
+      @media print {
+        body,
+        html {
+          background: #fff !important;
+          color: #000 !important;
+          overflow: visible !important;
+        }
+        .screen {
+          display: none !important;
+        }
+        #screen-reports {
+          display: flex !important;
+          position: static !important;
+          width: 100% !important;
+          height: auto !important;
+          background: #fff !important;
+        }
+        .relative.z-20 {
+          max-width: 100% !important;
+          height: auto !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+        .p-6.border-b,
+        .shrink-0,
+        button,
+        input,
+        select {
+          display: none !important;
+        }
+        #reports-analytics-panel {
+          display: block !important;
+          border-color: #000 !important;
+          color: #000 !important;
+          background: transparent !important;
+          margin-bottom: 20px !important;
+        }
+        #reports-list-container {
+          display: block !important;
+        }
+        .bg-white\/5,
+        .bg-black\/40 {
+          background: #f3f4f6 !important;
+          color: #000 !important;
+          border: 1px solid #d1d5db !important;
+          margin-bottom: 1rem !important;
+          page-break-inside: avoid;
+        }
+        .text-white,
+        .text-cyan-300,
+        .text-green-300 {
+          color: #000 !important;
+          text-shadow: none !important;
+        }
+        .fixed,
+        .tv-overlay,
+        .ambient-studio-light {
+          display: none !important;
+        }
+      }
+      @keyframes zoom-in-drama {
+        0% {
+          transform: scale(1) translate(0, 0);
+          filter: brightness(1) contrast(1) saturate(1);
+        }
+        100% {
+          transform: scale(1.3) translate(-2%, 2%);
+          filter: brightness(1.15) contrast(1.1) saturate(1.2);
+        }
+      }
+      .cinematic-zoom {
+        animation: zoom-in-drama 5s linear forwards;
+      }
+      @keyframes camera-shake-tense {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        25% {
+          transform: translate(0.5px, 0.5px) rotate(0.1deg);
+        }
+        50% {
+          transform: translate(-0.5px, -0.2px) rotate(-0.1deg);
+        }
+        75% {
+          transform: translate(-0.2px, 0.5px) rotate(0.1deg);
+        }
+      }
+      .animate-camera-shake {
+        animation: camera-shake-tense 0.8s ease-in-out infinite;
+      }
+      @keyframes tense-breathing {
+        0%,
+        100% {
+          transform: translateY(0) scaleY(1) scaleX(1);
+        }
+        50% {
+          transform: translateY(-2px) scaleY(1.015) scaleX(0.995);
+        }
+      }
+      .animate-tense-breathing {
+        animation: tense-breathing 1.8s ease-in-out infinite;
+        transform-origin: center bottom;
+      }
+      .sweat-drop {
+        position: absolute;
+        width: 8px;
+        height: 14px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(200, 230, 255, 0.4) 100%
+        );
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        box-shadow:
+          inset -1px -1px 2px rgba(0, 0, 0, 0.1),
+          0 2px 3px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        z-index: 20;
+        filter: blur(0.3px);
+      }
+      @keyframes sweat-trickle {
+        0% {
+          opacity: 0;
+          transform: translateY(0) scale(0.5);
+        }
+        15% {
+          opacity: 1;
+          transform: translateY(10px) scale(1);
+        }
+        85% {
+          opacity: 0.8;
+          transform: translateY(60px) scale(0.9);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(75px) scale(0.5);
+        }
+      }
+      .cinematic-img {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: bottom;
+        opacity: 0;
+        transition: opacity 1.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        will-change: opacity;
+      }
     </style>
-</head>
-<body class="text-white antialiased select-none">
-    <div id="intro-overlay" class="fixed inset-0 z-[9999999] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-1000 cursor-pointer" onclick="skipIntro()">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(30,58,138,0.5)_0%,_transparent_60%)] animate-intro-pulse-light mix-blend-screen"></div>
-        <div class="absolute inset-0 flex items-center justify-center z-40 pointer-events-none px-4">
-            <img id="intro-logo-img" src="https://raw.githubusercontent.com/augustoborges-ship-it/SPLASH/main/LOGO%20BRASIL%20CULTURAL.png" class="intro-logo-epic max-w-[400px] md:max-w-[600px] w-full object-contain" onerror="this.style.display='none';">
-        </div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none px-4">
-            <h1 class="flex gap-2 text-6xl md:text-[7rem] font-black font-orbitron drop-shadow-[0_0_25px_rgba(34,211,238,0.8)]">
-                <span class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600" style="animation-delay: 3.5s;">G</span>
-                <span class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600" style="animation-delay: 3.6s;">A</span>
-                <span class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600" style="animation-delay: 3.7s;">M</span>
-                <span class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600" style="animation-delay: 3.8s;">E</span>
-                <span class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600" style="animation-delay: 3.9s;">S</span>
-            </h1>
-            <p class="intro-subtitle-reveal mt-4 font-montserrat text-xs tracking-[0.5em] uppercase font-bold text-cyan-200" style="animation-delay: 4.8s;">Experiências Interativas</p>
-        </div>
+    <link rel="stylesheet" href="estilos_do_jogo.css" />
+  </head>
+  <body class="text-white antialiased select-none">
+    <canvas id="premium-fx-canvas" aria-hidden="true"></canvas>
+    <div id="premium-cursor-light" aria-hidden="true"></div>
+    <div
+      id="game-live-region"
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+    <div id="achievement-toast" role="status" aria-live="polite">
+      <span id="achievement-kicker">PROGRESSO</span>
+      <strong id="achievement-title">NÍVEL CONQUISTADO</strong>
+      <span id="achievement-subtitle">Continue avançando!</span>
     </div>
-    
-    <div id="camera-flash-overlay" class="fixed inset-0 bg-white opacity-0 z-[10000] pointer-events-none"></div>
-    <div class="tv-overlay"></div><div class="ambient-studio-light"></div>
-    
-    <div class="fixed top-4 left-4 z-[10000] flex gap-3 pointer-events-auto">
-        <button onclick="toggleMute()" class="w-10 h-10 bg-blue-950/80 border-2 border-cyan-400 rounded-full flex items-center justify-center hover:scale-110 transition-transform"><span id="icon-mute">🔊</span></button>
-        <button onclick="toggleFullscreen()" class="w-10 h-10 bg-blue-950/80 border-2 border-cyan-400 rounded-full flex items-center justify-center hover:scale-110 transition-transform"><span id="icon-fullscreen">⛶</span></button>
-        <div id="hud-team" style="display: none;" class="pointer-events-none ml-2 bg-blue-900/90 border-2 border-cyan-400 rounded-full px-4 py-1.5 flex items-center gap-2"><span class="text-yellow-400 font-bold text-xs uppercase">Vez da:</span><span id="current-team-name-hud" class="text-white font-black text-sm font-orbitron">Equipe</span></div>
+    <div id="cinematic-result-banner" aria-hidden="true">
+      <span id="result-banner-icon">✓</span>
+      <strong id="result-banner-title">RESPOSTA CERTA</strong>
+      <small id="result-banner-subtitle">O conhecimento vale ouro!</small>
+    </div>
+    <div
+      id="intro-overlay"
+      class="fixed inset-0 z-[9999999] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-1000 cursor-pointer"
+      onclick="skipIntro()"
+    >
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(30,58,138,0.5)_0%,_transparent_60%)] animate-intro-pulse-light mix-blend-screen"
+      ></div>
+      <div
+        class="absolute inset-0 flex items-center justify-center z-40 pointer-events-none px-4"
+      >
+        <img
+          id="intro-logo-img"
+          src="https://raw.githubusercontent.com/augustoborges-ship-it/SPLASH/main/LOGO%20BRASIL%20CULTURAL.png"
+          class="intro-logo-epic max-w-[400px] md:max-w-[600px] w-full object-contain"
+          onerror="this.style.display='none';"
+        />
+      </div>
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none px-4"
+      >
+        <h1
+          class="flex gap-2 text-6xl md:text-[7rem] font-black font-orbitron drop-shadow-[0_0_25px_rgba(34,211,238,0.8)]"
+        >
+          <span
+            class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600"
+            style="animation-delay: 3.5s"
+            >G</span
+          >
+          <span
+            class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600"
+            style="animation-delay: 3.6s"
+            >A</span
+          >
+          <span
+            class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600"
+            style="animation-delay: 3.7s"
+            >M</span
+          >
+          <span
+            class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600"
+            style="animation-delay: 3.8s"
+            >E</span
+          >
+          <span
+            class="games-letter bg-clip-text text-transparent bg-gradient-to-b from-white via-cyan-100 to-blue-600"
+            style="animation-delay: 3.9s"
+            >S</span
+          >
+        </h1>
+        <p
+          class="intro-subtitle-reveal mt-4 font-montserrat text-xs tracking-[0.5em] uppercase font-bold text-cyan-200"
+          style="animation-delay: 4.8s"
+        >
+          Experiências Interativas
+        </p>
+      </div>
+      <div class="intro-skip-hint">CLIQUE, ENTER OU ESPAÇO PARA ENTRAR</div>
+    </div>
+
+    <div
+      id="camera-flash-overlay"
+      class="fixed inset-0 bg-white opacity-0 z-[10000] pointer-events-none"
+    ></div>
+    <div class="tv-overlay"></div>
+    <div class="ambient-studio-light"></div>
+
+    <div
+      id="global-controls"
+      class="fixed top-4 left-4 z-[10000] flex gap-3 pointer-events-auto"
+    >
+      <button
+        onclick="toggleMute()"
+        aria-label="Ativar ou desativar som"
+        class="premium-control w-10 h-10 bg-blue-950/80 border-2 border-cyan-400 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+      >
+        <span id="icon-mute">🔊</span>
+      </button>
+      <button
+        onclick="toggleFullscreen()"
+        aria-label="Ativar ou sair da tela cheia"
+        class="premium-control w-10 h-10 bg-blue-950/80 border-2 border-cyan-400 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+      >
+        <span id="icon-fullscreen">⛶</span>
+      </button>
+      <div
+        id="hud-team"
+        style="display: none"
+        class="pointer-events-none ml-2 bg-blue-900/90 border-2 border-cyan-400 rounded-full px-4 py-1.5 flex items-center gap-2"
+      >
+        <span class="text-yellow-400 font-bold text-xs uppercase">Vez da:</span
+        ><span
+          id="current-team-name-hud"
+          class="text-white font-black text-sm font-orbitron"
+          >Equipe</span
+        >
+      </div>
     </div>
 
     <!-- TELA HOME (COM O VISUAL PERFEITO DO BRUTÃO E BOTÕES CORRIGIDOS) -->
-    <div id="screen-home" class="screen active justify-center items-center relative overflow-hidden">
-        <img src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/AUDIT%C3%93RIO%20BRUTUS.png" class="absolute inset-0 w-full h-full object-cover filter blur-[2px] opacity-60 z-0">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.9)_100%)] z-0"></div>
-        <img src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BRUT%C3%83O%20FAZENDO%20PERGUNTA_APRESENTADOR.png" class="absolute bottom-0 left-[-5vw] h-[85vh] max-w-[45vw] object-contain object-bottom-left z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-breathe">
-        
-        <div class="relative z-20 flex flex-col items-center justify-center text-center p-4 h-full md:ml-[30vw]">
-            <h2 class="text-cyan-400 font-bold tracking-[0.3em] text-sm md:text-lg mb-2 drop-shadow-md">O DESAFIO DO CONHECIMENTO</h2>
-            <h1 class="text-5xl md:text-7xl font-black text-gold-premium leading-none pb-6 text-center">SHOW DO<br>BRUTÃO</h1>
-            
-            <div class="flex flex-col md:flex-row gap-6 w-full max-w-3xl z-10 justify-center">
-                <!-- BOTÃO MODO ALUNO (CONECTADO) -->
-                <div class="bg-blue-900/60 backdrop-blur-md border-2 border-cyan-500 rounded-3xl p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform" onclick="openStudentSetup()">
-                    <div class="w-16 h-16 bg-gradient-to-b from-cyan-400 to-blue-600 rounded-full flex items-center justify-center text-3xl mb-4">🎒</div>
-                    <h3 class="text-xl font-black font-orbitron mb-2 uppercase tracking-wider">Modo Aluno</h3>
-                    <p class="text-xs text-cyan-100/80 mb-6">Treino livre. Jogue rapidamente em casa ou no laboratório.</p>
-                    <button class="bg-cyan-500 text-blue-950 font-black px-6 py-2 rounded-full uppercase w-full">Jogar</button>
-                </div>
-                
-                <!-- BOTÃO ACESSO PRO (CONECTADO) -->
-                <div class="bg-purple-900/60 backdrop-blur-md border-2 border-purple-400 rounded-3xl p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform" onclick="openProfLogin()">
-                    <div class="w-16 h-16 bg-gradient-to-b from-purple-400 to-purple-700 rounded-full flex items-center justify-center text-3xl mb-4">🎓</div>
-                    <h3 class="text-xl font-black font-orbitron mb-2 uppercase tracking-wider">Educador</h3>
-                    <p class="text-xs text-purple-100/80 mb-6">Autonomia Total. Crie turmas, gira equipas e aceda à área PRO.</p>
-                    <button class="bg-purple-500 text-white font-black px-6 py-2 rounded-full uppercase w-full">Acesso PRO</button>
-                </div>
+    <div
+      id="screen-home"
+      class="screen active justify-center items-center relative overflow-hidden"
+    >
+      <img
+        src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/AUDIT%C3%93RIO%20BRUTUS.png"
+        class="absolute inset-0 w-full h-full object-cover filter blur-[2px] opacity-60 z-0"
+      />
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.9)_100%)] z-0"
+      ></div>
+      <img
+        src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BRUT%C3%83O%20FAZENDO%20PERGUNTA_APRESENTADOR.png"
+        class="absolute bottom-0 left-[-5vw] h-[85vh] max-w-[45vw] object-contain object-bottom-left z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-breathe"
+      />
+
+      <div
+        class="relative z-20 flex flex-col items-center justify-center text-center p-4 h-full md:ml-[30vw]"
+      >
+        <h2
+          class="text-cyan-400 font-bold tracking-[0.3em] text-sm md:text-lg mb-2 drop-shadow-md"
+        >
+          O DESAFIO DO CONHECIMENTO
+        </h2>
+        <h1
+          class="text-5xl md:text-7xl font-black text-gold-premium leading-none pb-6 text-center"
+        >
+          SHOW DO<br />BRUTÃO
+        </h1>
+
+        <div
+          class="flex flex-col md:flex-row gap-6 w-full max-w-3xl z-10 justify-center"
+        >
+          <!-- BOTÃO MODO ALUNO (CONECTADO) -->
+          <div
+            class="mode-card mode-card-student bg-blue-900/60 backdrop-blur-md border-2 border-cyan-500 rounded-3xl p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
+            data-premium-tilt
+            role="button"
+            tabindex="0"
+            onclick="openStudentSetup()"
+          >
+            <div
+              class="w-16 h-16 bg-gradient-to-b from-cyan-400 to-blue-600 rounded-full flex items-center justify-center text-3xl mb-4"
+            >
+              🎒
             </div>
-            
-            <button id="btn-resume-home" onclick="resumeGame()" class="hidden mt-8 rounded-full bg-green-600 px-10 py-3 font-orbitron font-black border-2 border-green-400 shadow-lg text-white hover:scale-105 transition-transform z-10">RETOMAR PARTIDA SALVA</button>
+            <h3
+              class="text-xl font-black font-orbitron mb-2 uppercase tracking-wider"
+            >
+              Modo Aluno
+            </h3>
+            <p class="text-xs text-cyan-100/80 mb-6">
+              Treino livre. Jogue rapidamente em casa ou no laboratório.
+            </p>
+            <button
+              class="bg-cyan-500 text-blue-950 font-black px-6 py-2 rounded-full uppercase w-full"
+            >
+              Jogar
+            </button>
+          </div>
+
+          <!-- BOTÃO ACESSO PRO (CONECTADO) -->
+          <div
+            class="mode-card mode-card-educator bg-purple-900/60 backdrop-blur-md border-2 border-purple-400 rounded-3xl p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
+            data-premium-tilt
+            role="button"
+            tabindex="0"
+            onclick="openProfLogin()"
+          >
+            <div
+              class="w-16 h-16 bg-gradient-to-b from-purple-400 to-purple-700 rounded-full flex items-center justify-center text-3xl mb-4"
+            >
+              🎓
+            </div>
+            <h3
+              class="text-xl font-black font-orbitron mb-2 uppercase tracking-wider"
+            >
+              Educador
+            </h3>
+            <p class="text-xs text-purple-100/80 mb-6">
+              Autonomia Total. Crie turmas, gira equipas e aceda à área PRO.
+            </p>
+            <button
+              class="bg-purple-500 text-white font-black px-6 py-2 rounded-full uppercase w-full"
+            >
+              Acesso PRO
+            </button>
+          </div>
         </div>
+
+        <button
+          id="btn-resume-home"
+          onclick="resumeGame()"
+          class="hidden mt-8 rounded-full bg-green-600 px-10 py-3 font-orbitron font-black border-2 border-green-400 shadow-lg text-white hover:scale-105 transition-transform z-10"
+        >
+          RETOMAR PARTIDA SALVA
+        </button>
+      </div>
     </div>
 
     <!-- TELA SETUP DO ESTUDANTE -->
-    <div id="screen-setup-student" class="screen justify-center items-center relative overflow-hidden">
-        <img src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/AUDIT%C3%93RIO%20BRUTUS.png" class="absolute inset-0 w-full h-full object-cover filter blur-[4px] opacity-40">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.9)_100%)]"></div>
-        <div class="relative z-20 bg-blue-900/85 backdrop-blur-xl border-4 border-cyan-400 rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-[0_15px_50px_rgba(34,211,238,0.2)]">
-            <button onclick="goBackToHome()" class="absolute top-4 left-4 text-cyan-400 text-xs font-bold uppercase bg-black/40 px-3 py-1 rounded-lg hover:text-white">← Voltar</button>
-            <div class="flex flex-col items-center mb-8 mt-2">
-                <div class="w-16 h-16 bg-cyan-500 rounded-full flex items-center justify-center text-3xl mb-3">🎒</div>
-                <h2 class="text-3xl font-black text-white font-orbitron uppercase text-shadow-tv">Modo Treino</h2>
-            </div>
-            <div class="bg-black/40 p-6 rounded-2xl border border-white/10 mb-6">
-                <input type="text" id="student-name" placeholder="Digite o seu nome de herói..." class="w-full bg-blue-950/80 border-2 border-cyan-500 rounded-xl p-4 text-center text-xl text-white font-bold mb-6 outline-none focus:border-yellow-400">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-cyan-300 text-xs font-bold uppercase mb-2">Ano Escolar</label>
-                        <select id="student-year" class="w-full bg-blue-950 text-white font-bold p-3 rounded-lg border border-cyan-500/50 outline-none">
-                            <option value="1º ano">1º Ano</option><option value="2º ano">2º Ano</option><option value="3º ano">3º Ano</option>
-                            <option value="4º ano">4º Ano</option><option value="5º ano" selected>5º Ano</option><option value="6º ano">6º Ano</option>
-                            <option value="7º ano">7º Ano</option><option value="8º ano">8º Ano</option><option value="9º ano">9º Ano</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-cyan-300 text-xs font-bold uppercase mb-2">Disciplina</label>
-                        <select id="student-subject" class="w-full bg-blue-950 text-white font-bold p-3 rounded-lg border border-cyan-500/50 outline-none">
-                            <option value="matemática">Matemática</option><option value="português">Língua Portuguesa</option>
-                            <option value="ciências">Ciências</option><option value="geografia">Geografia</option>
-                            <option value="história">História</option><option value="inglês">Inglês</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-cyan-300 text-xs font-bold uppercase mb-2 text-center mt-4">Nível de Dificuldade</label>
-                    <div class="flex gap-2 justify-center">
-                        <label class="flex-1 cursor-pointer"><input type="radio" name="student-diff" value="fácil" class="peer hidden" checked><div class="bg-blue-950 border-2 border-gray-600 rounded-lg p-3 text-center text-white font-bold peer-checked:border-green-400 peer-checked:text-green-300 transition-all" onclick="window.dificuldadeModoTreino='fácil'">FÁCIL</div></label>
-                        <label class="flex-1 cursor-pointer"><input type="radio" name="student-diff" value="médio" class="peer hidden"><div class="bg-blue-950 border-2 border-gray-600 rounded-lg p-3 text-center text-white font-bold peer-checked:border-yellow-400 peer-checked:text-yellow-300 transition-all" onclick="window.dificuldadeModoTreino='médio'">MÉDIO</div></label>
-                        <label class="flex-1 cursor-pointer"><input type="radio" name="student-diff" value="difícil" class="peer hidden"><div class="bg-blue-950 border-2 border-gray-600 rounded-lg p-3 text-center text-white font-bold peer-checked:border-red-400 peer-checked:text-red-300 transition-all" onclick="window.dificuldadeModoTreino='difícil'">DIFÍCIL</div></label>
-                    </div>
-                </div>
-            </div>
-            <div id="student-error-area"></div>
-            <!-- BOTÃO CONECTADO AO NOVO MOTOR BLINDADO -->
-            <button onclick="startStudentGameSafe()" class="w-full bg-gradient-to-b from-green-500 to-green-700 border-2 border-green-300 py-4 rounded-full font-orbitron font-black text-xl text-white hover:scale-105 transition-all text-shadow-tv">JOGAR AGORA</button>
+    <div
+      id="screen-setup-student"
+      class="screen justify-center items-center relative overflow-hidden"
+    >
+      <img
+        src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/AUDIT%C3%93RIO%20BRUTUS.png"
+        class="absolute inset-0 w-full h-full object-cover filter blur-[4px] opacity-40"
+      />
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.9)_100%)]"
+      ></div>
+      <div
+        class="relative z-20 bg-blue-900/85 backdrop-blur-xl border-4 border-cyan-400 rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-[0_15px_50px_rgba(34,211,238,0.2)]"
+      >
+        <button
+          onclick="goBackToHome()"
+          class="absolute top-4 left-4 text-cyan-400 text-xs font-bold uppercase bg-black/40 px-3 py-1 rounded-lg hover:text-white"
+        >
+          ← Voltar
+        </button>
+        <div class="flex flex-col items-center mb-8 mt-2">
+          <div
+            class="w-16 h-16 bg-cyan-500 rounded-full flex items-center justify-center text-3xl mb-3"
+          >
+            🎒
+          </div>
+          <h2
+            class="text-3xl font-black text-white font-orbitron uppercase text-shadow-tv"
+          >
+            Modo Treino
+          </h2>
         </div>
+        <div class="bg-black/40 p-6 rounded-2xl border border-white/10 mb-6">
+          <input
+            type="text"
+            id="student-name"
+            placeholder="Digite o seu nome de herói..."
+            class="w-full bg-blue-950/80 border-2 border-cyan-500 rounded-xl p-4 text-center text-xl text-white font-bold mb-6 outline-none focus:border-yellow-400"
+          />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label
+                class="block text-cyan-300 text-xs font-bold uppercase mb-2"
+                >Ano Escolar</label
+              >
+              <select
+                id="student-year"
+                class="w-full bg-blue-950 text-white font-bold p-3 rounded-lg border border-cyan-500/50 outline-none"
+              >
+                <option value="1º ano">1º Ano</option>
+                <option value="2º ano">2º Ano</option>
+                <option value="3º ano">3º Ano</option>
+                <option value="4º ano">4º Ano</option>
+                <option value="5º ano" selected>5º Ano</option>
+                <option value="6º ano">6º Ano</option>
+                <option value="7º ano">7º Ano</option>
+                <option value="8º ano">8º Ano</option>
+                <option value="9º ano">9º Ano</option>
+              </select>
+            </div>
+            <div>
+              <label
+                class="block text-cyan-300 text-xs font-bold uppercase mb-2"
+                >Disciplina</label
+              >
+              <select
+                id="student-subject"
+                class="w-full bg-blue-950 text-white font-bold p-3 rounded-lg border border-cyan-500/50 outline-none"
+              >
+                <option value="matemática">Matemática</option>
+                <option value="português">Língua Portuguesa</option>
+                <option value="ciências">Ciências</option>
+                <option value="geografia">Geografia</option>
+                <option value="história">História</option>
+                <option value="inglês">Inglês</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label
+              class="block text-cyan-300 text-xs font-bold uppercase mb-2 text-center mt-4"
+              >Nível de Dificuldade</label
+            >
+            <div class="flex gap-2 justify-center">
+              <label class="flex-1 cursor-pointer"
+                ><input
+                  type="radio"
+                  name="student-diff"
+                  value="fácil"
+                  class="peer hidden"
+                  checked
+                />
+                <div
+                  class="bg-blue-950 border-2 border-gray-600 rounded-lg p-3 text-center text-white font-bold peer-checked:border-green-400 peer-checked:text-green-300 transition-all"
+                  onclick="window.dificuldadeModoTreino='fácil'"
+                >
+                  FÁCIL
+                </div></label
+              >
+              <label class="flex-1 cursor-pointer"
+                ><input
+                  type="radio"
+                  name="student-diff"
+                  value="médio"
+                  class="peer hidden"
+                />
+                <div
+                  class="bg-blue-950 border-2 border-gray-600 rounded-lg p-3 text-center text-white font-bold peer-checked:border-yellow-400 peer-checked:text-yellow-300 transition-all"
+                  onclick="window.dificuldadeModoTreino='médio'"
+                >
+                  MÉDIO
+                </div></label
+              >
+              <label class="flex-1 cursor-pointer"
+                ><input
+                  type="radio"
+                  name="student-diff"
+                  value="difícil"
+                  class="peer hidden"
+                />
+                <div
+                  class="bg-blue-950 border-2 border-gray-600 rounded-lg p-3 text-center text-white font-bold peer-checked:border-red-400 peer-checked:text-red-300 transition-all"
+                  onclick="window.dificuldadeModoTreino='difícil'"
+                >
+                  DIFÍCIL
+                </div></label
+              >
+            </div>
+          </div>
+        </div>
+        <div id="student-error-area"></div>
+        <!-- BOTÃO CONECTADO AO NOVO MOTOR BLINDADO -->
+        <button
+          onclick="startStudentGameSafe()"
+          class="w-full bg-gradient-to-b from-green-500 to-green-700 border-2 border-green-300 py-4 rounded-full font-orbitron font-black text-xl text-white hover:scale-105 transition-all text-shadow-tv"
+        >
+          JOGAR AGORA
+        </button>
+      </div>
     </div>
 
     <!-- MODAL DE SENHA DO PROFESSOR -->
-    <div id="modal-prof-login" class="fixed inset-0 z-[80] hidden bg-black/90 backdrop-blur-xl flex-col items-center justify-center p-4">
-        <div class="bg-gradient-to-b from-gray-900 to-black border-2 border-purple-500 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(168,85,247,0.4)] relative">
-            <button onclick="closeProfLogin()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-            <div class="w-20 h-20 bg-purple-900/50 border border-purple-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner">🔒</div>
-            <h2 class="text-2xl font-black text-white font-orbitron tracking-wider mb-2 uppercase">Acesso Restrito</h2>
-            <p class="text-purple-200/70 text-sm font-montserrat mb-8">Insira o PIN do Educador. (Padrão: 1234)</p>
-            <input type="password" id="prof-pin-input" placeholder="****" maxlength="4" class="w-full text-center text-3xl font-black tracking-widest bg-black/50 border-2 border-purple-500/50 rounded-xl p-4 text-white focus:border-purple-400 focus:outline-none mb-6">
-            <div id="login-error" class="hidden text-red-400 text-sm font-bold mb-4 animate-pulse">PIN Incorreto!</div>
-            <button onclick="authProf()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black py-4 rounded-xl hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all uppercase tracking-widest">Desbloquear</button>
+    <div
+      id="modal-prof-login"
+      class="fixed inset-0 z-[80] hidden bg-black/90 backdrop-blur-xl flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-gradient-to-b from-gray-900 to-black border-2 border-purple-500 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(168,85,247,0.4)] relative"
+      >
+        <button
+          onclick="closeProfLogin()"
+          class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold"
+        >
+          &times;
+        </button>
+        <div
+          class="w-20 h-20 bg-purple-900/50 border border-purple-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner"
+        >
+          🔒
         </div>
+        <h2
+          class="text-2xl font-black text-white font-orbitron tracking-wider mb-2 uppercase"
+        >
+          Acesso Restrito
+        </h2>
+        <p class="text-purple-200/70 text-sm font-montserrat mb-8">
+          Insira o PIN do Educador. (Padrão: 1234)
+        </p>
+        <input
+          type="password"
+          id="prof-pin-input"
+          placeholder="****"
+          maxlength="4"
+          class="w-full text-center text-3xl font-black tracking-widest bg-black/50 border-2 border-purple-500/50 rounded-xl p-4 text-white focus:border-purple-400 focus:outline-none mb-6"
+        />
+        <div
+          id="login-error"
+          class="hidden text-red-400 text-sm font-bold mb-4 animate-pulse"
+        >
+          PIN Incorreto!
+        </div>
+        <button
+          onclick="authProf()"
+          class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black py-4 rounded-xl hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all uppercase tracking-widest"
+        >
+          Desbloquear
+        </button>
+      </div>
     </div>
 
     <!-- Modais LGPD, Sync, Alertas... (NÃO ALTERADOS VISUALMENTE) -->
-    <div id="modal-lgpd" class="fixed inset-0 z-[99999] hidden bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4"><div class="bg-gradient-to-b from-slate-900 to-black border-2 border-indigo-500 rounded-3xl p-8 max-w-xl w-full shadow-[0_0_50px_rgba(99,102,241,0.4)] relative"><div class="w-16 h-16 bg-indigo-900/50 border border-indigo-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">⚖️</div><h2 class="text-2xl font-black text-white font-orbitron text-center uppercase tracking-widest mb-4">Termo de Privacidade e LGPD</h2><div class="bg-black/50 border border-white/10 rounded-xl p-5 mb-6 text-sm text-gray-300 font-montserrat h-48 overflow-y-auto custom-scrollbar"><p class="mb-3"><strong class="text-indigo-400">1. Ambiente Offline:</strong> Esta aplicação guarda os dados <strong>exclusivamente neste dispositivo</strong>.</p><p class="mb-3"><strong class="text-indigo-400">2. Responsabilidade do Controlador:</strong> Ao inserir dados do VAAR, o Educador assume o papel de Controlador conforme a LGPD.</p><p class="mb-3"><strong class="text-indigo-400">3. Segurança Local:</strong> É sua responsabilidade garantir a segurança física deste computador.</p><p><strong class="text-indigo-400">4. Direito ao Esquecimento:</strong> Poderá a qualquer momento apagar os dados na Central de Privacidade.</p></div><label class="flex items-start gap-3 cursor-pointer group mb-6"><input type="checkbox" id="lgpd-checkbox" class="w-5 h-5 mt-1 accent-indigo-500 cursor-pointer"><span class="text-gray-300 text-sm font-bold group-hover:text-white transition-colors">Compreendo a minha responsabilidade sobre os dados locais.</span></label><div class="flex gap-4"><button onclick="declineLGPD()" class="w-1/3 bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-700 transition-colors uppercase text-xs">Sair</button><button onclick="acceptLGPD()" class="w-2/3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black py-3 rounded-xl hover:scale-105 transition-transform uppercase text-xs">Concordar e Entrar</button></div></div></div>
-    <div id="modal-sync" class="fixed inset-0 z-[9999] hidden bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4"><div class="bg-gradient-to-b from-blue-900 to-black border-2 border-cyan-500 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(34,211,238,0.4)] relative"><div class="w-20 h-20 bg-green-500/20 border border-green-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner">📥</div><h2 class="text-2xl font-black text-white font-orbitron tracking-wider mb-2 uppercase text-shadow-tv">Boletim Recebido!</h2><div class="bg-black/50 border border-white/10 rounded-xl p-4 mb-6 shadow-inner text-left"><p class="text-gray-400 text-xs font-bold uppercase mb-1">Aluno / Herói:</p><p id="sync-student-name" class="text-white font-black text-lg mb-3 truncate">Carregando...</p><label class="block text-cyan-400 text-xs font-bold uppercase mb-1 mt-2">Vincular a uma Turma Existente:</label><select id="sync-class-select" class="w-full bg-blue-950 border border-cyan-500 text-white font-bold p-2 rounded text-xs outline-none cursor-pointer mb-3"><option value="">Apenas Histórico Geral (Sem Vínculo)</option></select><div class="flex items-center gap-2"><span class="text-yellow-400 font-bold text-sm">Nível Atingido:</span><span id="sync-level" class="bg-yellow-500 text-black px-2 py-0.5 rounded text-xs font-black">0</span></div></div><div class="flex gap-3"><button onclick="rejectSync()" class="w-1/3 bg-gray-800 border border-gray-600 text-white font-black py-3 rounded-xl hover:bg-gray-700 text-xs uppercase">Ignorar</button><button onclick="acceptSync()" class="w-2/3 bg-gradient-to-r from-green-500 to-green-700 border border-green-400 text-white font-black py-3 rounded-xl hover:scale-105 text-xs uppercase">Salvar no Diário</button></div></div></div>
+    <div
+      id="modal-lgpd"
+      class="fixed inset-0 z-[99999] hidden bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-gradient-to-b from-slate-900 to-black border-2 border-indigo-500 rounded-3xl p-8 max-w-xl w-full shadow-[0_0_50px_rgba(99,102,241,0.4)] relative"
+      >
+        <div
+          class="w-16 h-16 bg-indigo-900/50 border border-indigo-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner"
+        >
+          ⚖️
+        </div>
+        <h2
+          class="text-2xl font-black text-white font-orbitron text-center uppercase tracking-widest mb-4"
+        >
+          Termo de Privacidade e LGPD
+        </h2>
+        <div
+          class="bg-black/50 border border-white/10 rounded-xl p-5 mb-6 text-sm text-gray-300 font-montserrat h-48 overflow-y-auto custom-scrollbar"
+        >
+          <p class="mb-3">
+            <strong class="text-indigo-400">1. Ambiente Offline:</strong> Esta
+            aplicação guarda os dados
+            <strong>exclusivamente neste dispositivo</strong>.
+          </p>
+          <p class="mb-3">
+            <strong class="text-indigo-400"
+              >2. Responsabilidade do Controlador:</strong
+            >
+            Ao inserir dados do VAAR, o Educador assume o papel de Controlador
+            conforme a LGPD.
+          </p>
+          <p class="mb-3">
+            <strong class="text-indigo-400">3. Segurança Local:</strong> É sua
+            responsabilidade garantir a segurança física deste computador.
+          </p>
+          <p>
+            <strong class="text-indigo-400">4. Direito ao Esquecimento:</strong>
+            Poderá a qualquer momento apagar os dados na Central de Privacidade.
+          </p>
+        </div>
+        <label class="flex items-start gap-3 cursor-pointer group mb-6"
+          ><input
+            type="checkbox"
+            id="lgpd-checkbox"
+            class="w-5 h-5 mt-1 accent-indigo-500 cursor-pointer"
+          /><span
+            class="text-gray-300 text-sm font-bold group-hover:text-white transition-colors"
+            >Compreendo a minha responsabilidade sobre os dados locais.</span
+          ></label
+        >
+        <div class="flex gap-4">
+          <button
+            onclick="declineLGPD()"
+            class="w-1/3 bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-700 transition-colors uppercase text-xs"
+          >
+            Sair</button
+          ><button
+            onclick="acceptLGPD()"
+            class="w-2/3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black py-3 rounded-xl hover:scale-105 transition-transform uppercase text-xs"
+          >
+            Concordar e Entrar
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="modal-sync"
+      class="fixed inset-0 z-[9999] hidden bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-gradient-to-b from-blue-900 to-black border-2 border-cyan-500 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(34,211,238,0.4)] relative"
+      >
+        <div
+          class="w-20 h-20 bg-green-500/20 border border-green-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner"
+        >
+          📥
+        </div>
+        <h2
+          class="text-2xl font-black text-white font-orbitron tracking-wider mb-2 uppercase text-shadow-tv"
+        >
+          Boletim Recebido!
+        </h2>
+        <div
+          class="bg-black/50 border border-white/10 rounded-xl p-4 mb-6 shadow-inner text-left"
+        >
+          <p class="text-gray-400 text-xs font-bold uppercase mb-1">
+            Aluno / Herói:
+          </p>
+          <p
+            id="sync-student-name"
+            class="text-white font-black text-lg mb-3 truncate"
+          >
+            Carregando...
+          </p>
+          <label
+            class="block text-cyan-400 text-xs font-bold uppercase mb-1 mt-2"
+            >Vincular a uma Turma Existente:</label
+          ><select
+            id="sync-class-select"
+            class="w-full bg-blue-950 border border-cyan-500 text-white font-bold p-2 rounded text-xs outline-none cursor-pointer mb-3"
+          >
+            <option value="">Apenas Histórico Geral (Sem Vínculo)</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-yellow-400 font-bold text-sm"
+              >Nível Atingido:</span
+            ><span
+              id="sync-level"
+              class="bg-yellow-500 text-black px-2 py-0.5 rounded text-xs font-black"
+              >0</span
+            >
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button
+            onclick="rejectSync()"
+            class="w-1/3 bg-gray-800 border border-gray-600 text-white font-black py-3 rounded-xl hover:bg-gray-700 text-xs uppercase"
+          >
+            Ignorar</button
+          ><button
+            onclick="acceptSync()"
+            class="w-2/3 bg-gradient-to-r from-green-500 to-green-700 border border-green-400 text-white font-black py-3 rounded-xl hover:scale-105 text-xs uppercase"
+          >
+            Salvar no Diário
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- TELA DASHBOARD PRO -->
-    <div id="screen-prof-dashboard" class="screen justify-center items-center relative overflow-hidden">
-        <img src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/AUDIT%C3%93RIO%20BRUTUS.png" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-[4px]">
-        <div class="absolute inset-0 bg-gradient-to-b from-purple-900/80 to-black"></div>
-        <div class="relative z-20 w-full max-w-7xl p-6 h-full overflow-y-auto flex flex-col">
-            <div class="flex justify-between items-center mb-8 bg-black/40 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
-                <div class="flex items-center gap-4"><div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-xl shadow-[0_0_15px_rgba(168,85,247,0.6)]">🎓</div><div><h1 class="text-2xl font-black font-orbitron uppercase tracking-widest">Painel PRO</h1><p class="text-purple-300 text-xs font-montserrat">Autonomia Pedagógica Total</p></div></div>
-                <button onclick="logoutProf()" class="text-gray-400 hover:text-white font-bold text-sm bg-white/5 px-4 py-2 rounded-lg">SAIR</button>
+    <div
+      id="screen-prof-dashboard"
+      class="screen justify-center items-center relative overflow-hidden"
+    >
+      <img
+        src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/AUDIT%C3%93RIO%20BRUTUS.png"
+        class="absolute inset-0 w-full h-full object-cover opacity-30 blur-[4px]"
+      />
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-purple-900/80 to-black"
+      ></div>
+      <div
+        class="relative z-20 w-full max-w-7xl p-6 h-full overflow-y-auto flex flex-col"
+      >
+        <div
+          class="flex justify-between items-center mb-8 bg-black/40 p-4 rounded-2xl border border-white/10 backdrop-blur-md"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-xl shadow-[0_0_15px_rgba(168,85,247,0.6)]"
+            >
+              🎓
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-1 content-start">
-                <div class="bg-blue-900/40 border-2 border-cyan-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform" onclick="openSetup()"><div class="w-20 h-20 bg-blue-950 border border-cyan-400 rounded-full flex items-center justify-center text-4xl mb-4">📺</div><h2 class="text-xl font-black font-orbitron uppercase mb-2">Game Show</h2><p class="text-cyan-100/70 text-xs mb-6 flex-1">Inicie a experiência para a sala de aula.</p><button class="w-full bg-cyan-500 text-blue-950 font-black py-2.5 rounded-xl">Configurar</button></div>
-                <div class="bg-indigo-900/40 border-2 border-indigo-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform" onclick="openClassManager()"><div class="w-20 h-20 bg-indigo-950 border border-indigo-400 rounded-full flex items-center justify-center text-4xl mb-4 relative">👥<span class="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full">VAAR</span></div><h2 class="text-xl font-black font-orbitron uppercase mb-2">Turmas</h2><p class="text-indigo-100/70 text-xs mb-6 flex-1">Gestão VAAR e perfis de equidade.</p><button class="w-full bg-indigo-500 text-white font-black py-2.5 rounded-xl">Organizar</button></div>
-                <div class="bg-purple-900/40 border-2 border-fuchsia-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform" onclick="openQuestionBank()"><div class="w-20 h-20 bg-purple-950 border border-fuchsia-400 rounded-full flex items-center justify-center text-4xl mb-4">📚</div><h2 class="text-xl font-black font-orbitron uppercase mb-2">Questões</h2><p class="text-fuchsia-100/70 text-xs mb-6 flex-1">Injete as suas próprias questões no jogo.</p><button class="w-full bg-fuchsia-500 text-white font-black py-2.5 rounded-xl">Gerir Banco</button></div>
-                <div class="bg-emerald-900/40 border-2 border-emerald-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform" onclick="openReportsInbox()"><div class="w-20 h-20 bg-emerald-950 border border-emerald-400 rounded-full flex items-center justify-center text-4xl mb-4 relative">📊<span id="inbox-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center hidden">0</span></div><h2 class="text-xl font-black font-orbitron uppercase mb-2">O Meu Diário</h2><p class="text-emerald-100/70 text-xs mb-6 flex-1">Sincronize boletins e analise diagnósticos.</p><button class="w-full bg-emerald-500 text-white font-black py-2.5 rounded-xl">Acessar Diário</button></div>
+            <div>
+              <h1
+                class="text-2xl font-black font-orbitron uppercase tracking-widest"
+              >
+                Painel PRO
+              </h1>
+              <p class="text-purple-300 text-xs font-montserrat">
+                Autonomia Pedagógica Total
+              </p>
             </div>
-            <div class="mt-8 flex justify-center pb-4"><button onclick="wipeAllDataLGPD()" class="flex items-center gap-2 text-gray-500 hover:text-red-400 text-xs font-bold uppercase tracking-widest transition-colors font-montserrat"><span>⚖️</span> Central de Privacidade e Dados (LGPD)</button></div>
+          </div>
+          <button
+            onclick="logoutProf()"
+            class="text-gray-400 hover:text-white font-bold text-sm bg-white/5 px-4 py-2 rounded-lg"
+          >
+            SAIR
+          </button>
         </div>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-1 content-start"
+        >
+          <div
+            class="bg-blue-900/40 border-2 border-cyan-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform"
+            onclick="openSetup()"
+          >
+            <div
+              class="w-20 h-20 bg-blue-950 border border-cyan-400 rounded-full flex items-center justify-center text-4xl mb-4"
+            >
+              📺
+            </div>
+            <h2 class="text-xl font-black font-orbitron uppercase mb-2">
+              Game Show
+            </h2>
+            <p class="text-cyan-100/70 text-xs mb-6 flex-1">
+              Inicie a experiência para a sala de aula.
+            </p>
+            <button
+              class="w-full bg-cyan-500 text-blue-950 font-black py-2.5 rounded-xl"
+            >
+              Configurar
+            </button>
+          </div>
+          <div
+            class="bg-indigo-900/40 border-2 border-indigo-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform"
+            onclick="openClassManager()"
+          >
+            <div
+              class="w-20 h-20 bg-indigo-950 border border-indigo-400 rounded-full flex items-center justify-center text-4xl mb-4 relative"
+            >
+              👥<span
+                class="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                >VAAR</span
+              >
+            </div>
+            <h2 class="text-xl font-black font-orbitron uppercase mb-2">
+              Turmas
+            </h2>
+            <p class="text-indigo-100/70 text-xs mb-6 flex-1">
+              Gestão VAAR e perfis de equidade.
+            </p>
+            <button
+              class="w-full bg-indigo-500 text-white font-black py-2.5 rounded-xl"
+            >
+              Organizar
+            </button>
+          </div>
+          <div
+            class="bg-purple-900/40 border-2 border-fuchsia-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform"
+            onclick="openQuestionBank()"
+          >
+            <div
+              class="w-20 h-20 bg-purple-950 border border-fuchsia-400 rounded-full flex items-center justify-center text-4xl mb-4"
+            >
+              📚
+            </div>
+            <h2 class="text-xl font-black font-orbitron uppercase mb-2">
+              Questões
+            </h2>
+            <p class="text-fuchsia-100/70 text-xs mb-6 flex-1">
+              Injete as suas próprias questões no jogo.
+            </p>
+            <button
+              class="w-full bg-fuchsia-500 text-white font-black py-2.5 rounded-xl"
+            >
+              Gerir Banco
+            </button>
+          </div>
+          <div
+            class="bg-emerald-900/40 border-2 border-emerald-500 rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer hover:-translate-y-2 transition-transform"
+            onclick="openReportsInbox()"
+          >
+            <div
+              class="w-20 h-20 bg-emerald-950 border border-emerald-400 rounded-full flex items-center justify-center text-4xl mb-4 relative"
+            >
+              📊<span
+                id="inbox-badge"
+                class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center hidden"
+                >0</span
+              >
+            </div>
+            <h2 class="text-xl font-black font-orbitron uppercase mb-2">
+              O Meu Diário
+            </h2>
+            <p class="text-emerald-100/70 text-xs mb-6 flex-1">
+              Sincronize boletins e analise diagnósticos.
+            </p>
+            <button
+              class="w-full bg-emerald-500 text-white font-black py-2.5 rounded-xl"
+            >
+              Acessar Diário
+            </button>
+          </div>
+        </div>
+        <div class="mt-8 flex justify-center pb-4">
+          <button
+            onclick="wipeAllDataLGPD()"
+            class="flex items-center gap-2 text-gray-500 hover:text-red-400 text-xs font-bold uppercase tracking-widest transition-colors font-montserrat"
+          >
+            <span>⚖️</span> Central de Privacidade e Dados (LGPD)
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- (DEMAIS TELAS MANTIDAS INTEGRALMENTE - OMITIDAS AQUI PARA NÃO ULTRAPASSAR O LIMITE, MAS ELAS JÁ ESTÃO NO CÓDIGO JS EM FORMA DINÂMICA) -->
-    
+
     <!-- TELA DO JOGO (GAMEPLAY) -->
     <div id="screen-game" class="screen">
-        <img src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND%20PARA%20QUEST%C3%9OS%20E%20CARTAS.png" id="bg-game" class="layer-bg object-cover transition-all duration-1000">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-black/80 z-0 pointer-events-none transition-all duration-1000" id="game-vignette"></div>
-        <div id="cinematic-vignette" class="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_60%,_transparent_15%,_rgba(0,0,0,0.98)_100%)] z-[15] pointer-events-none opacity-0 transition-opacity duration-[5000ms] ease-in-out"></div>
-        <div class="spotlight spot-left spot-white" id="spot-1"></div><div class="spotlight spot-right spot-white" id="spot-2"></div>
-        
-        <div id="draggable-hologram" class="hidden absolute z-[9999] flex-col items-center" style="touch-action: none;">
-            <div id="drag-header" class="w-full bg-cyan-950/90 border-t-2 border-l-2 border-r-2 border-cyan-400 rounded-t-2xl p-3 flex justify-between items-center cursor-grab active:cursor-grabbing backdrop-blur-md shadow-lg"><span class="text-xs text-cyan-200 font-orbitron tracking-widest font-bold">🔀 MOVER</span><button onclick="closeDraggableHologram()" class="text-cyan-400 font-bold px-2 text-lg hover:text-white">&times;</button></div>
-            <div class="relative p-3 rounded-b-2xl border-b-2 border-l-2 border-r-2 border-cyan-400 bg-blue-950/95 shadow-2xl min-w-[250px]"><img id="drag-q-image" src="" class="relative z-0 max-h-[35vh] w-auto object-contain rounded-xl bg-black/50 pointer-events-none"></div>
+      <img
+        src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BACKGROUND%20PARA%20QUEST%C3%9OS%20E%20CARTAS.png"
+        id="bg-game"
+        onerror="this.style.display='none'"
+        class="layer-bg object-cover transition-all duration-1000"
+      />
+      <div
+        class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-black/80 z-0 pointer-events-none transition-all duration-1000"
+        id="game-vignette"
+      ></div>
+      <div
+        id="cinematic-vignette"
+        class="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_60%,_transparent_15%,_rgba(0,0,0,0.98)_100%)] z-[15] pointer-events-none opacity-0 transition-opacity duration-[5000ms] ease-in-out"
+      ></div>
+      <div id="game-progress-hud" aria-label="Progresso da partida">
+        <div class="progress-hud-copy">
+          <span id="progress-stage-label">JORNADA DO CONHECIMENTO</span>
+          <strong
+            ><span id="progress-current">1</span><small>/16</small></strong
+          >
         </div>
-        
-        <div class="relative w-full h-[55%] flex items-end justify-start pl-[4%] z-20 pb-16 md:pb-24">
-            <div class="absolute z-10 h-[90%] bottom-0 right-0 w-[45vw] md:w-[35vw] pointer-events-none transition-opacity duration-300 flex justify-end">
-                <img id="char-host" src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BRUTUS_APRESENTA%C3%87%C3%83O%20INICIAL.png" class="h-full w-auto object-contain object-bottom-right transition-opacity duration-300 animate-breathe">
-                <div id="char-host-sprite" class="hidden absolute right-0 bottom-0 h-full w-[130%] bg-no-repeat bg-contain bg-bottom transition-opacity duration-300" style="background-position: 0% 0%;"></div>
-                <div id="char-host-cinematic" class="hidden absolute right-0 bottom-0 h-full w-[130%] transition-opacity duration-300" style="transform-origin: 80% 100%;"></div>
-            </div>
-            <div class="relative z-30 w-[92%] md:w-[70%] h-full flex flex-col items-center justify-center pt-8" id="question-panel-wrapper">
-                <div class="relative overflow-hidden mb-4 bg-white/5 backdrop-blur-lg border border-white/10 px-8 py-2 rounded-full"><div id="q-category" class="text-gray-300 text-xs font-semibold uppercase tracking-[0.25em] font-montserrat text-center">Carregando...</div></div>
-                <div class="relative w-full bg-blue-950/90 backdrop-blur-xl border-2 border-blue-400 rounded-3xl p-6 md:p-10 shadow-2xl flex flex-col items-center justify-center text-center mt-auto transition-all duration-500" id="main-q-box">
-                    <div class="absolute -top-5 left-8 bg-blue-950 border-2 border-blue-400 rounded-full px-6 py-1"><span class="text-blue-200 text-xs font-bold uppercase font-montserrat">PERGUNTA</span><span id="q-counter" class="text-white font-black text-lg font-orbitron">1</span></div>
-                    <div class="absolute -top-5 right-6 z-50"><button id="btn-toggle-hologram" onclick="toggleDraggableHologram()" class="hidden bg-cyan-950 border-2 border-cyan-400 rounded-full px-4 py-1 text-cyan-200 text-xs font-bold font-montserrat hover:bg-cyan-500 hover:text-blue-950 transition-all">🖼️ VER IMAGEM</button></div>
-                    <span id="q-text" class="text-white text-xl md:text-2xl lg:text-3xl font-bold font-montserrat leading-tight text-shadow-tv px-4 mt-4"></span>
-                </div>
-            </div>
-            <div class="absolute -bottom-10 left-1/2 transform -translate-x-1/2 z-40 transition-all duration-300" id="timer-wrapper"><div class="w-20 h-20 rounded-full bg-blue-950 border-[4px] border-cyan-400 flex items-center justify-center shadow-lg transition-all duration-300" id="timer-circle"><span id="timer-display" class="text-3xl font-black text-white font-orbitron transition-colors duration-300">30</span></div></div>
+        <div class="progress-track">
+          <span id="progress-fill"></span><i id="progress-spark"></i>
         </div>
-        
-        <div class="relative w-full h-[45%] bg-blue-950/80 border-t-4 border-blue-800 z-10 flex flex-col justify-end p-4 md:p-8 pt-16" id="bottom-panel">
-            <div id="alternatives-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl mx-auto mb-6 relative z-50"></div>
-            <div class="flex justify-between items-end w-full max-w-6xl mx-auto">
-                <div class="flex gap-4"><button id="btn-ajudas" onclick="openHelp()" class="bg-blue-900 border border-cyan-400 rounded-full px-6 py-2 flex items-center gap-2 text-sm font-bold text-cyan-100 uppercase hover:scale-105 transition-all">💡 Ajudas</button><button onclick="openStopModal()" class="bg-red-900 border border-orange-400 rounded-full px-6 py-2 flex items-center gap-2 text-sm font-bold text-orange-100 uppercase hover:scale-105 transition-all">🛑 Desistir</button></div>
-                <div class="flex gap-2">
-                    <div class="bg-gradient-to-b from-orange-500 to-orange-800 border border-orange-300 rounded-lg px-4 py-2 text-center text-white"><div class="text-[0.6rem] font-bold uppercase tracking-widest mb-1">Errar</div><div id="lose-award-display" class="text-sm font-black">0</div></div>
-                    <button onclick="openStopModal()" class="bg-gradient-to-b from-orange-500 to-orange-800 border border-orange-300 rounded-lg px-4 py-2 text-center text-white hover:scale-105 transition-transform"><div class="text-[0.6rem] font-bold uppercase tracking-widest mb-1">Parar</div><div id="stop-award-display" class="text-sm font-black">0</div></button>
-                    <div class="bg-gradient-to-b from-yellow-500 to-yellow-800 border border-yellow-300 rounded-lg px-6 py-2 text-center shadow-[0_0_15px_rgba(234,179,8,0.5)]"><div class="text-[0.6rem] font-bold uppercase tracking-widest mb-1">Acertar</div><div id="award-display" class="text-lg font-black text-white text-shadow-tv">1 MIL</div></div>
-                </div>
-            </div>
+        <div class="progress-milestones" aria-hidden="true">
+          <i></i><i></i><i></i><i></i>
         </div>
+      </div>
+      <div id="streak-hud" aria-label="Sequência de acertos">
+        <span>⚡</span><strong id="streak-value">0</strong
+        ><small>SEQUÊNCIA</small>
+      </div>
+      <div id="round-intro" aria-hidden="true">
+        <span id="round-intro-kicker">PRÓXIMO DESAFIO</span
+        ><strong id="round-intro-number">PERGUNTA 1</strong>
+      </div>
+      <div id="tension-status" role="status" aria-live="polite">
+        <div class="tension-heart"><i></i><i></i><span>♥</span></div>
+        <div class="tension-status-copy">
+          <small id="tension-kicker">O ESTÚDIO SILENCIA</small
+          ><strong id="tension-title">MOMENTO DE DECISÃO</strong>
+        </div>
+        <div class="tension-wave" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+      </div>
+      <div id="answer-lock-hud" aria-hidden="true">
+        <span>◆</span><strong>RESPOSTA DEFINIDA</strong
+        ><small>O Brutão aguarda sua confirmação</small>
+      </div>
+      <div class="spotlight spot-left spot-white" id="spot-1"></div>
+      <div class="spotlight spot-right spot-white" id="spot-2"></div>
+
+      <div
+        id="draggable-hologram"
+        class="hidden absolute z-[9999] flex-col items-center"
+        style="touch-action: none"
+      >
+        <div
+          id="drag-header"
+          class="w-full bg-cyan-950/90 border-t-2 border-l-2 border-r-2 border-cyan-400 rounded-t-2xl p-3 flex justify-between items-center cursor-grab active:cursor-grabbing backdrop-blur-md shadow-lg"
+        >
+          <span
+            class="text-xs text-cyan-200 font-orbitron tracking-widest font-bold"
+            >🔀 MOVER</span
+          ><button
+            onclick="closeDraggableHologram()"
+            class="text-cyan-400 font-bold px-2 text-lg hover:text-white"
+          >
+            &times;
+          </button>
+        </div>
+        <div
+          class="relative p-3 rounded-b-2xl border-b-2 border-l-2 border-r-2 border-cyan-400 bg-blue-950/95 shadow-2xl min-w-[250px]"
+        >
+          <img
+            id="drag-q-image"
+            src=""
+            class="relative z-0 max-h-[35vh] w-auto object-contain rounded-xl bg-black/50 pointer-events-none"
+          />
+        </div>
+      </div>
+
+      <div
+        class="relative w-full h-[55%] flex items-end justify-start pl-[4%] z-20 pb-16 md:pb-24"
+      >
+        <div
+          id="character-stage"
+          class="absolute z-10 h-[90%] bottom-0 right-0 w-[45vw] md:w-[35vw] pointer-events-none transition-opacity duration-300 flex justify-end"
+        >
+          <div class="character-aura" aria-hidden="true"></div>
+          <img
+            id="char-host"
+            src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BRUTUS_APRESENTA%C3%87%C3%83O%20INICIAL.png"
+            alt="Brutus no palco"
+            decoding="async"
+            class="h-full w-auto object-contain object-bottom-right transition-opacity duration-300 animate-breathe"
+          />
+          <div
+            id="char-host-sprite"
+            class="hidden absolute right-0 bottom-0 h-full w-[130%] bg-no-repeat bg-contain bg-bottom transition-opacity duration-300"
+            style="background-position: 0% 0%"
+          ></div>
+          <div
+            id="char-host-cinematic"
+            aria-hidden="true"
+            class="hidden absolute right-0 bottom-0 h-full w-[130%] transition-opacity duration-300"
+            style="transform-origin: 80% 100%"
+          ></div>
+        </div>
+        <div
+          class="relative z-30 w-[92%] md:w-[70%] h-full flex flex-col items-center justify-center pt-8"
+          id="question-panel-wrapper"
+        >
+          <div class="question-meta-bar">
+            <div
+              id="q-category"
+              class="text-gray-300 text-xs font-semibold uppercase tracking-[0.25em] font-montserrat text-center"
+            >
+              Carregando...
+            </div>
+          </div>
+          <div class="question-card-premium" id="main-q-box">
+            <div class="question-index-badge">
+              <span>PERGUNTA</span><strong id="q-counter">1</strong>
+            </div>
+            <div class="absolute -top-5 right-6 z-50">
+              <button
+                id="btn-toggle-hologram"
+                onclick="toggleDraggableHologram()"
+                class="hidden bg-cyan-950 border-2 border-cyan-400 rounded-full px-4 py-1 text-cyan-200 text-xs font-bold font-montserrat hover:bg-cyan-500 hover:text-blue-950 transition-all"
+              >
+                🖼️ VER IMAGEM
+              </button>
+            </div>
+            <span id="q-text" class="question-copy"></span>
+            <div id="timer-wrapper" class="question-timer-dock">
+              <span class="timer-caption">TEMPO</span>
+              <div id="timer-circle" role="timer" aria-label="Tempo restante">
+                <span id="timer-display">30</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="relative w-full h-[45%] bg-blue-950/80 border-t-4 border-blue-800 z-10 flex flex-col justify-end p-4 md:p-8 pt-16"
+        id="bottom-panel"
+      >
+        <div
+          id="alternatives-container"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl mx-auto mb-6 relative z-50"
+        ></div>
+        <div class="game-footer-row">
+          <div class="game-help-actions">
+            <button
+              id="btn-ajudas"
+              onclick="openHelp()"
+              class="bg-blue-900 border border-cyan-400 rounded-full px-6 py-2 flex items-center gap-2 text-sm font-bold text-cyan-100 uppercase hover:scale-105 transition-all"
+            >
+              💡 Ajudas</button
+            ><button
+              onclick="openStopModal()"
+              class="bg-red-900 border border-orange-400 rounded-full px-6 py-2 flex items-center gap-2 text-sm font-bold text-orange-100 uppercase hover:scale-105 transition-all"
+            >
+              🛑 Desistir
+            </button>
+          </div>
+          <div class="game-prize-dock">
+            <div
+              class="bg-gradient-to-b from-orange-500 to-orange-800 border border-orange-300 rounded-lg px-4 py-2 text-center text-white"
+            >
+              <div
+                class="text-[0.6rem] font-bold uppercase tracking-widest mb-1"
+              >
+                Errar
+              </div>
+              <div id="lose-award-display" class="text-sm font-black">0</div>
+            </div>
+            <button
+              onclick="openStopModal()"
+              class="bg-gradient-to-b from-orange-500 to-orange-800 border border-orange-300 rounded-lg px-4 py-2 text-center text-white hover:scale-105 transition-transform"
+            >
+              <div
+                class="text-[0.6rem] font-bold uppercase tracking-widest mb-1"
+              >
+                Parar
+              </div>
+              <div id="stop-award-display" class="text-sm font-black">0</div>
+            </button>
+            <div
+              class="bg-gradient-to-b from-yellow-500 to-yellow-800 border border-yellow-300 rounded-lg px-6 py-2 text-center shadow-[0_0_15px_rgba(234,179,8,0.5)]"
+            >
+              <div
+                class="text-[0.6rem] font-bold uppercase tracking-widest mb-1"
+              >
+                Acertar
+              </div>
+              <div
+                id="award-display"
+                class="text-lg font-black text-white text-shadow-tv"
+              >
+                1 MIL
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- BLOCO DE SUPORTE FUNCIONAL - mantém o visual e evita quebra do motor -->
+    <span id="q-id" class="hidden">ID: ---</span>
+
+    <div
+      id="modal-confirm"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        id="confirm-box"
+        class="bg-blue-950 border-2 border-cyan-500 rounded-3xl p-8 max-w-md w-full text-center transform scale-95 transition-transform duration-300 shadow-[0_0_35px_rgba(34,211,238,0.35)]"
+      >
+        <div class="confirm-suspense-label">DECISÃO FINAL</div>
+        <h2
+          class="text-3xl font-black font-orbitron text-yellow-400 mb-2 uppercase drop-shadow-md"
+        >
+          Essa é sua resposta?
+        </h2>
+        <div class="bg-black/50 p-4 rounded-xl border border-white/10 mb-6">
+          <span
+            id="confirm-letter"
+            class="block text-4xl font-black text-white font-orbitron mb-2"
+            >A</span
+          >
+          <span id="confirm-text" class="text-sm font-bold text-gray-300"
+            >Alternativa selecionada</span
+          >
+        </div>
+        <p class="confirm-tension-copy">
+          O estúdio inteiro aguarda sua confirmação.
+        </p>
+        <div class="flex gap-4">
+          <button
+            id="btn-confirm-nao"
+            onclick="cancelAnswer()"
+            class="flex-1 bg-red-600 border border-red-400 text-white font-black py-3 rounded-xl hover:bg-red-500 transition-colors uppercase"
+          >
+            Não
+          </button>
+          <button
+            id="btn-confirm-sim"
+            onclick="confirmAnswer()"
+            class="flex-1 bg-green-600 border border-green-400 text-white font-black py-3 rounded-xl hover:bg-green-500 transition-colors uppercase"
+          >
+            Sim
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-feedback"
+      class="fixed inset-0 z-[130] hidden bg-black/95 backdrop-blur-lg flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-slate-950 border-2 border-red-500 rounded-3xl p-8 max-w-lg w-full text-center shadow-[0_0_35px_rgba(239,68,68,0.35)]"
+      >
+        <h2
+          id="feedback-title"
+          class="text-3xl font-black font-orbitron text-red-400 mb-4 uppercase"
+        >
+          Resposta incorreta!
+        </h2>
+        <p class="text-gray-300 text-xs uppercase font-bold mb-2">
+          Resposta correta
+        </p>
+        <div
+          id="feedback-correct-answer"
+          class="bg-black/50 border border-green-500/40 rounded-xl p-4 text-green-300 font-black mb-4"
+        >
+          ---
+        </div>
+        <p id="feedback-explanation" class="text-gray-300 text-sm mb-6">---</p>
+        <button
+          onclick="closeFeedbackAndNext()"
+          class="w-full bg-cyan-600 text-white font-black py-3 rounded-xl uppercase"
+        >
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="modal-help"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-blue-950 border-2 border-yellow-400 rounded-3xl p-8 max-w-xl w-full text-center shadow-[0_0_35px_rgba(250,204,21,0.35)]"
+      >
+        <h2
+          class="text-3xl font-black font-orbitron text-yellow-400 mb-6 uppercase"
+        >
+          Ajudas
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            data-help-type="eliminar"
+            onclick="useHelp('eliminar')"
+            class="bg-blue-900 border border-cyan-400 rounded-xl p-4 text-white font-bold"
+          >
+            🃏 Eliminar duas
+          </button>
+          <button
+            data-help-type="palpite"
+            onclick="useHelp('palpite')"
+            class="bg-blue-900 border border-cyan-400 rounded-xl p-4 text-white font-bold"
+          >
+            👥 Palpite da turma
+          </button>
+          <button
+            data-help-type="dica"
+            onclick="useHelp('dica')"
+            class="bg-blue-900 border border-cyan-400 rounded-xl p-4 text-white font-bold"
+          >
+            💡 Dica do Brutão
+          </button>
+          <button
+            data-help-type="pular"
+            onclick="useHelp('pular')"
+            class="bg-blue-900 border border-cyan-400 rounded-xl p-4 text-white font-bold"
+          >
+            ⏭️ Pular pergunta
+          </button>
+        </div>
+        <button
+          onclick="closeHelp()"
+          class="mt-6 bg-gray-800 border border-gray-500 text-white font-bold px-8 py-3 rounded-xl"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="modal-parar"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-slate-950 border-2 border-orange-400 rounded-3xl p-8 max-w-md w-full text-center"
+      >
+        <h2
+          class="text-3xl font-black font-orbitron text-orange-400 mb-4 uppercase"
+        >
+          Parar?
+        </h2>
+        <p class="text-gray-300 mb-4">Você ficará com:</p>
+        <div
+          id="stop-value-modal"
+          class="text-4xl font-black text-yellow-400 font-orbitron mb-6"
+        >
+          0
+        </div>
+        <div class="flex gap-4">
+          <button
+            onclick="cancelStop()"
+            class="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold"
+          >
+            Voltar
+          </button>
+          <button
+            onclick="confirmStop()"
+            class="flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold"
+          >
+            Parar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-pular"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-blue-950 border-2 border-cyan-400 rounded-3xl p-8 max-w-md w-full text-center"
+      >
+        <h2
+          class="text-3xl font-black font-orbitron text-cyan-400 mb-4 uppercase"
+        >
+          Pular pergunta?
+        </h2>
+        <p class="text-gray-300 mb-4">
+          Pulos restantes:
+          <span id="skips-left" class="font-black text-yellow-400">3</span>
+        </p>
+        <div class="flex gap-4">
+          <button
+            onclick="cancelSkip()"
+            class="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold"
+          >
+            Cancelar
+          </button>
+          <button
+            onclick="confirmSkip()"
+            class="flex-1 bg-cyan-600 text-white py-3 rounded-xl font-bold"
+          >
+            Pular
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-cartas"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-blue-950 border-2 border-yellow-400 rounded-3xl p-8 max-w-lg w-full text-center"
+      >
+        <h2
+          class="text-2xl font-black font-orbitron text-yellow-400 mb-6 uppercase"
+        >
+          Escolha uma carta
+        </h2>
+        <div
+          id="cards-container"
+          class="flex gap-4 justify-center flex-wrap"
+        ></div>
+      </div>
+    </div>
+
+    <div
+      id="modal-audience"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-blue-950 border-2 border-cyan-400 rounded-3xl p-8 max-w-lg w-full"
+      >
+        <h2
+          class="text-2xl font-black font-orbitron text-cyan-300 mb-6 uppercase text-center"
+        >
+          Palpite da plateia
+        </h2>
+        <div id="audience-bars" class="flex flex-col gap-3"></div>
+        <button
+          onclick="closeAudience()"
+          class="mt-6 w-full bg-cyan-600 text-white py-3 rounded-xl font-bold"
+        >
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="modal-dica"
+      class="fixed inset-0 z-[120] hidden bg-black/90 backdrop-blur-sm flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-blue-950 border-2 border-yellow-400 rounded-3xl p-8 max-w-2xl w-full"
+      >
+        <h2
+          class="text-2xl font-black font-orbitron text-yellow-400 mb-6 uppercase text-center"
+        >
+          Dica dos especialistas
+        </h2>
+        <div id="dica-boards" class="flex gap-3"></div>
+        <button
+          onclick="closeDica()"
+          class="mt-6 w-full bg-yellow-600 text-white py-3 rounded-xl font-bold"
+        >
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="modal-system-msg"
+      class="fixed inset-0 z-[200] hidden bg-black/95 backdrop-blur-md flex-col items-center justify-center p-4"
+    >
+      <div
+        class="bg-[#0f172a] border-2 border-cyan-500 rounded-2xl p-8 max-w-sm w-full text-center shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+      >
+        <div class="text-4xl mb-4">ℹ️</div>
+        <h2
+          id="sys-msg-title"
+          class="text-2xl font-black text-white font-orbitron mb-2 uppercase"
+        >
+          Aviso
+        </h2>
+        <p id="sys-msg-text" class="text-gray-300 text-sm mb-6"></p>
+        <button
+          onclick="closeSystemMessage()"
+          class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest hover:bg-cyan-500"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="screen-end-win"
+      class="screen result-screen result-screen-win justify-center items-center z-[90] p-4"
+    >
+      <div
+        id="confetti-container"
+        data-confetti-container
+        class="fixed inset-0 pointer-events-none"
+      ></div>
+      <div class="result-light-beam" aria-hidden="true"></div>
+      <div id="win-box" class="result-experience-card">
+        <div class="result-icon result-icon-win">★</div>
+        <div class="result-eyebrow">MISSÃO CONCLUÍDA</div>
+        <h1>Campeão do conhecimento!</h1>
+        <p id="end-win-team" class="result-player-name">Campeão</p>
+        <div class="result-award-block">
+          <small>PRÊMIO CONQUISTADO</small
+          ><strong id="final-win-award">1 MILHÃO</strong>
+        </div>
+        <div class="result-mini-stats">
+          <div>
+            <span>✓</span><strong id="end-win-level">16</strong
+            ><small>acertos</small>
+          </div>
+          <div><span>◆</span><strong>100%</strong><small>jornada</small></div>
+          <div>
+            <span>⚡</span><strong id="end-win-streak">16</strong
+            ><small>sequência</small>
+          </div>
+        </div>
+        <p class="result-message">
+          Você dominou o desafio e chegou ao prêmio máximo. O palco é seu!
+        </p>
+        <div class="result-actions">
+          <button
+            id="btn-end-win"
+            onclick="showLeaderboard()"
+            class="result-primary-action"
+          >
+            <span id="btn-end-win-text">Ver painel completo</span>
+          </button>
+          <button
+            onclick="window.location.reload()"
+            class="result-secondary-action"
+          >
+            Jogar novamente
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="screen-end-lose"
+      class="screen result-screen result-screen-lose justify-center items-center z-[90] p-4"
+    >
+      <div class="result-light-beam" aria-hidden="true"></div>
+      <div class="result-character-panel" aria-hidden="true">
+        <div class="result-character-aura"></div>
+        <img
+          src="https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/BRUT%C3%83O%20CONSOLANDO%20O%20PARTICIPANTE.png"
+          alt=""
+        />
+      </div>
+      <div class="result-experience-card">
+        <div class="result-icon result-icon-lose">↗</div>
+        <div class="result-eyebrow">A JORNADA CONTINUA</div>
+        <h1>Você chegou até aqui!</h1>
+        <p id="end-lose-team" class="result-player-name">Fim de treino</p>
+        <div class="result-award-block">
+          <small>PRÊMIO DESTA RODADA</small
+          ><strong id="final-lose-award">0</strong>
+        </div>
+        <div class="result-mini-stats">
+          <div>
+            <span>✓</span><strong id="end-lose-level">0</strong
+            ><small>acertos</small>
+          </div>
+          <div>
+            <span>◎</span><strong id="end-lose-progress">0%</strong
+            ><small>da jornada</small>
+          </div>
+          <div>
+            <span>★</span><strong id="end-lose-best">0</strong
+            ><small>melhor nível</small>
+          </div>
+        </div>
+        <p class="result-message">
+          Errar também faz parte da conquista. Reveja o resultado, aprenda com a
+          questão e volte ainda mais forte.
+        </p>
+        <div class="result-actions">
+          <button
+            id="btn-end-lose"
+            onclick="showLeaderboard()"
+            class="result-primary-action"
+          >
+            <span id="btn-end-lose-text">Analisar desempenho</span>
+          </button>
+          <button
+            onclick="window.location.reload()"
+            class="result-secondary-action"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="screen-end-stop"
+      class="screen result-screen result-screen-stop justify-center items-center z-[90] p-4"
+    >
+      <div class="result-light-beam" aria-hidden="true"></div>
+      <div class="result-experience-card">
+        <div class="result-icon result-icon-stop">◆</div>
+        <div class="result-eyebrow">DECISÃO ESTRATÉGICA</div>
+        <h1>Prêmio garantido!</h1>
+        <p id="end-stop-team" class="result-player-name">Fim de treino</p>
+        <div class="result-award-block">
+          <small>VOCÊ LEVA</small><strong id="final-stop-award">0</strong>
+        </div>
+        <div class="result-mini-stats">
+          <div>
+            <span>✓</span><strong id="end-stop-level">0</strong
+            ><small>acertos</small>
+          </div>
+          <div>
+            <span>◎</span><strong id="end-stop-progress">0%</strong
+            ><small>da jornada</small>
+          </div>
+          <div>
+            <span>◈</span><strong>SEGURO</strong><small>resultado</small>
+          </div>
+        </div>
+        <p class="result-message">
+          Saber a hora de parar também é estratégia. Confira o painel completo
+          da sua jornada.
+        </p>
+        <div class="result-actions">
+          <button
+            id="btn-end-stop"
+            onclick="showLeaderboard()"
+            class="result-primary-action"
+          >
+            <span id="btn-end-stop-text">Ver painel completo</span>
+          </button>
+          <button
+            onclick="window.location.reload()"
+            class="result-secondary-action"
+          >
+            Voltar ao início
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="screen-setup"
+      class="screen justify-center items-center bg-black/95 z-[50] p-4"
+    >
+      <div
+        class="bg-blue-950/90 border-2 border-cyan-400 rounded-3xl p-8 max-w-lg w-full text-center"
+      >
+        <button
+          onclick="backToProfDashboard()"
+          class="mb-6 text-cyan-300 font-bold"
+        >
+          ← Voltar
+        </button>
+        <h2 class="text-3xl font-black font-orbitron text-white mb-6 uppercase">
+          Lançar missão
+        </h2>
+        <p class="text-gray-300 text-sm mb-6">
+          A missão será iniciada com o banco carregado.
+        </p>
+        <button
+          onclick="startGame()"
+          class="w-full bg-cyan-600 text-white font-black py-4 rounded-xl uppercase"
+        >
+          Iniciar missão
+        </button>
+      </div>
+    </div>
+
+    <div id="screen-question-bank" class="screen bg-[#0f172a] z-[50] p-6">
+      <div class="max-w-6xl mx-auto w-full h-full flex flex-col">
+        <div
+          class="flex justify-between items-center mb-4 bg-black/40 border border-white/10 p-4 rounded-2xl"
+        >
+          <h2 class="text-2xl font-black font-orbitron text-white uppercase">
+            Gestor de questões
+          </h2>
+          <button
+            onclick="backToProfDashboard()"
+            class="text-cyan-300 font-bold"
+          >
+            Voltar
+          </button>
+        </div>
+        <div
+          id="qb-list-container"
+          class="flex-1 overflow-y-auto bg-black/20 border border-white/10 rounded-2xl p-4 text-white"
+        ></div>
+      </div>
+    </div>
+
+    <div id="screen-class-manager" class="screen admin-screen z-[50] p-6">
+      <div class="admin-shell">
+        <header class="admin-page-header">
+          <div class="admin-header-icon">👥</div>
+          <div class="admin-header-copy">
+            <span>ORGANIZAÇÃO PEDAGÓGICA</span>
+            <h2>Minhas turmas</h2>
+            <p>Organize estudantes e acompanhe cada jornada de aprendizagem.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button onclick="openNewClassModal()" class="admin-primary-button">
+              ＋ Nova turma
+            </button>
+            <button onclick="backToProfDashboard()" class="admin-back-button">
+              ← Painel PRO
+            </button>
+          </div>
+        </header>
+        <div class="class-manager-grid">
+          <aside class="class-sidebar">
+            <div class="class-sidebar-heading">
+              <div>
+                <small>SUAS TURMAS</small
+                ><strong id="class-total-label">0 cadastradas</strong>
+              </div>
+              <button onclick="openNewClassModal()" aria-label="Criar turma">
+                ＋
+              </button>
+            </div>
+            <label class="class-search-box"
+              ><span>⌕</span
+              ><input
+                id="class-search-input"
+                type="search"
+                placeholder="Buscar turma…"
+                oninput="renderClassList(this.value)"
+            /></label>
+            <div id="class-list-container" class="class-list-container"></div>
+          </aside>
+          <main class="class-content-panel">
+            <div id="class-details-empty" class="class-empty-state">
+              <div class="class-empty-visual">
+                <span>👥</span><i></i><i></i><i></i>
+              </div>
+              <span class="class-empty-eyebrow">COMECE POR AQUI</span>
+              <h3>Sua primeira turma em poucos segundos</h3>
+              <p>
+                Crie uma turma para organizar os boletins recebidos e acompanhar
+                a evolução dos estudantes.
+              </p>
+              <button
+                onclick="openNewClassModal()"
+                class="admin-primary-button"
+              >
+                Criar primeira turma
+              </button>
+              <small>Os dados permanecem somente neste dispositivo.</small>
+            </div>
+            <div
+              id="class-details-content"
+              class="class-details-content hidden"
+            >
+              <div class="class-detail-header">
+                <div>
+                  <span>TURMA SELECIONADA</span>
+                  <h3 id="active-class-name">Turma</h3>
+                  <p>
+                    <strong id="active-class-count">0</strong> estudantes
+                    vinculados
+                  </p>
+                </div>
+                <div class="class-detail-badge">ATIVA</div>
+              </div>
+              <div class="class-stat-grid">
+                <div>
+                  <span>👤</span><strong id="class-stat-students">0</strong
+                  ><small>estudantes</small>
+                </div>
+                <div>
+                  <span>🎯</span><strong id="class-stat-missions">0</strong
+                  ><small>missões</small>
+                </div>
+                <div>
+                  <span>📈</span><strong id="class-stat-progress">—</strong
+                  ><small>desempenho</small>
+                </div>
+              </div>
+              <div class="student-section-heading">
+                <div>
+                  <small>ESTUDANTES</small
+                  ><strong>Boletins vinculados à turma</strong>
+                </div>
+                <button onclick="openReportsInbox()">Importar boletim</button>
+              </div>
+              <div
+                id="student-list-container"
+                class="student-list-container"
+              ></div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-new-class"
+      class="fixed inset-0 z-[150] hidden bg-black/80 backdrop-blur-lg flex-col items-center justify-center p-4"
+    >
+      <div class="new-class-modal-card">
+        <button
+          onclick="closeNewClassModal()"
+          class="modal-close-button"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+        <div class="new-class-icon">👥</div>
+        <span>ORGANIZAÇÃO PEDAGÓGICA</span>
+        <h2>Criar nova turma</h2>
+        <p>Dê um nome simples e fácil de identificar.</p>
+        <label for="new-class-name">Nome da turma</label>
+        <input
+          id="new-class-name"
+          type="text"
+          maxlength="60"
+          placeholder="Ex.: 5º Ano A — Manhã"
+          onkeydown="if(event.key==='Enter') saveNewClass()"
+        />
+        <div id="new-class-error" class="new-class-error hidden">
+          Digite um nome para continuar.
+        </div>
+        <div class="new-class-actions">
+          <button onclick="closeNewClassModal()">Cancelar</button
+          ><button onclick="saveNewClass()">Criar turma</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="screen-reports" class="screen bg-[#0f172a] z-[50] p-6">
+      <div class="max-w-6xl mx-auto w-full h-full flex flex-col">
+        <div
+          class="flex justify-between items-center mb-4 bg-black/40 border border-white/10 p-4 rounded-2xl"
+        >
+          <h2 class="text-2xl font-black font-orbitron text-white uppercase">
+            Diário analítico
+          </h2>
+          <button
+            onclick="backToProfDashboard()"
+            class="text-cyan-300 font-bold"
+          >
+            Voltar
+          </button>
+        </div>
+        <select
+          id="report-filter-class"
+          class="bg-blue-950 border border-cyan-500 text-white p-3 rounded-xl mb-4"
+        >
+          <option value="">Todas as turmas</option>
+        </select>
+        <div id="tab-content-analytics" class="text-gray-300"></div>
+        <div id="tab-content-skills" class="hidden text-gray-300"></div>
+        <div id="tab-content-list" class="hidden">
+          <div id="reports-list-container"></div>
+        </div>
+      </div>
+    </div>
+    <!-- FIM DO BLOCO DE SUPORTE FUNCIONAL -->
 
     <!-- ==========================================
          A ORDEM RIGOROSA DE CARREGAMENTO DO MOTOR
          (SE ALTERAR A ORDEM O JOGO MORRE)
          ========================================== -->
     <script src="motor_do_banco_de_questoes.js"></script>
+    <script src="banco_de_dados_motor_engine.js"></script>
     <script src="configura_es_e_utilitarios.js"></script>
+    <script src="banco_de_questoes.js"></script>
     <script src="logica_e_core_do_jogo.js"></script>
     <script src="interface_visual_e_dom.js"></script>
     <script src="inicializa_o_e_controladores_principais.js"></script>
-
-</body>
+  </body>
 </html>

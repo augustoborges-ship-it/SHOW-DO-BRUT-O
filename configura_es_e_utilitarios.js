@@ -1,4 +1,8 @@
-// --- 1. CONFIGURAÇÕES BASE E UTILITÁRIOS ---
+// =========================================================================
+// Arquivo: configura_es_e_utilitarios.js
+// Função: Configurações Base, Utilitários e Personagens
+// =========================================================================
+
 window.APP_CONFIG = Object.freeze({ 
     storagePrefix: 'brutao_', 
     assetsBase: 'https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/' 
@@ -43,77 +47,32 @@ window.removeStorageKey = function(key) {
     try { localStorage.removeItem(key); } catch (err) {} 
 };
 
-window.copyToClipboardFallback = function(text, btnElement) { 
-    const t = window.ce("textarea"); 
-    t.value = text; 
-    t.style.position = "fixed"; 
-    t.style.left = "-9999px"; 
-    document.body.appendChild(t); 
-    t.focus(); 
-    t.select(); 
-    try { 
-        document.execCommand('copy'); 
-        if(btnElement) { 
-            btnElement.innerText = '📋 COPIADO!'; 
-            btnElement.className = 'bg-cyan-600 text-white font-bold px-4 py-2 rounded-lg text-xs shrink-0'; 
-        } 
-    } catch (err) {} 
-    document.body.removeChild(t); 
-};
-
 window.normalizeImageUrl = function(url) { 
     if(!url) return ""; 
     let clean = url.trim(); 
-    // Correção: Uso de new RegExp para blindar o código e evitar erros na leitura do browser.
     let m = clean.match(new RegExp("/file/d/([a-zA-Z0-9_-]+)")); 
     if(m) return "https://drive.google.com/uc?export=view&id=" + m[1]; 
     if(clean.includes('dropbox.com') && clean.endsWith('dl=0')) return clean.replace('dl=0', 'raw=1'); 
     return clean; 
 };
 
-// --- 2. VARIÁVEIS GLOBAIS DE ESTADO ---
-window.allQuestions = []; 
-window.allTurmas = []; 
-window.activeTurmaId = null;
-window.activeQuestions = []; 
-window.globalQuestionIndex = 0; 
-window.teams = []; 
-window.currentTeamIndex = 0;
-window.gameMode = 'single'; 
-window.isStudentMode = false; 
-window.timeLeft = 30; 
-window.timerInterval = null;
-window.isWaitingAnswer = false; 
-window.pendingAnswerIndex = null; 
-window.pendingButtonElement = null;
-window.answerHistory = []; 
-window.editingQuestionId = null; 
-window.questionToDeleteId = null; 
-window.isMuted = false;
-window.typeWriterTimeout = null; 
-window.tensionFlashesInterval = null; 
-window.spriteInterval = null; 
-window.cinematicInterval = null;
-window.dragCounter = 0;
-window.isIntroSkipped = false;
-window.pendingFeedbackType = null;
-window.questionStartTime = null;
-window.isAudioPlaying = false;
-window.audioTimeout = null;
-window.lastAnsweredQuestion = null;
-window.pendingSyncData = null;
+// --- VARIÁVEIS GLOBAIS DE ESTADO ---
+window.allQuestions = []; window.allTurmas = []; window.activeTurmaId = null;
+window.activeQuestions = []; window.globalQuestionIndex = 0; window.teams = []; window.currentTeamIndex = 0;
+window.gameMode = 'single'; window.isStudentMode = false; window.timeLeft = 30; window.timerInterval = null;
+window.isWaitingAnswer = false; window.pendingAnswerIndex = null; window.pendingButtonElement = null;
+window.answerHistory = []; window.editingQuestionId = null; window.questionToDeleteId = null; window.isMuted = false;
+window.typeWriterTimeout = null; window.tensionFlashesInterval = null; window.spriteInterval = null; window.cinematicInterval = null;
+window.dragCounter = 0; window.isIntroSkipped = false; window.pendingFeedbackType = null; window.questionStartTime = null;
+window.isAudioPlaying = false; window.audioTimeout = null; window.lastAnsweredQuestion = null; window.pendingSyncData = null;
 
+// --- CONFIGURAÇÃO VISUAL: INTEGRAÇÃO DO VÍDEO MP4 DO BRUTÃO ---
 window.brutusPoses = { 
     normal: { type: 'img', src: window.asset("BRUTUS_APRESENTA%C3%87%C3%83O%20INICIAL.png") }, 
     pensativo: { type: 'img', src: window.asset("BRUTUS_PARTICIPANTE_AGUARDANDO%20A%20PERGUNTA.png") }, 
     tenso_cinematic: { 
-        type: 'cinematic', 
-        frames: [
-            window.asset("FRAME%202.svg"), window.asset("FRAME%203.svg"), window.asset("FRAME%204.svg"), 
-            window.asset("FRAME%205.svg"), window.asset("FRAME%206.svg"), window.asset("FRAME%207.svg"), 
-            window.asset("FRAME%208.svg"), window.asset("FRAME%209.svg"), window.asset("FRAME%2010.svg"), 
-            window.asset("FRAME%2011.svg")
-        ] 
+        type: 'video', 
+        src: "https://raw.githubusercontent.com/augustoborges-ship-it/SHOW-DO-BRUT-O/main/brutus_tenso_pergunta.mp4"
     }, 
     acerto: { type: 'img', src: window.asset("BRUTUS%20ACERTOU.png") }, 
     erro: { type: 'img', src: window.asset("BRUTUS%20ERROU.png") }, 
