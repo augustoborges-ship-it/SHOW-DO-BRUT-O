@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Show do Brutão - Premium AAA+</title>
-    <!-- Estilos compilados localmente: a interface não depende de CDN. -->
+    
+    <!-- CORREÇÃO VITAL: Tailwind e Fontes restaurados para destravar o layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Montserrat:wght@700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="estilos_do_jogo.css" />
 
     <script>
       const APP_CONFIG = (window.APP_CONFIG = Object.freeze({
@@ -879,7 +883,6 @@
         will-change: opacity;
       }
     </style>
-    <link rel="stylesheet" href="estilos_do_jogo.css" />
   </head>
   <body class="text-white antialiased select-none">
     <canvas id="premium-fx-canvas" aria-hidden="true"></canvas>
@@ -1291,7 +1294,7 @@
       </div>
     </div>
 
-    <!-- Modais LGPD, Sync, Alertas... (NÃO ALTERADOS VISUALMENTE) -->
+    <!-- Modais LGPD, Sync, Alertas... -->
     <div
       id="modal-lgpd"
       class="fixed inset-0 z-[99999] hidden bg-black/95 backdrop-blur-xl flex-col items-center justify-center p-4"
@@ -1570,8 +1573,6 @@
       </div>
     </div>
 
-    <!-- (DEMAIS TELAS MANTIDAS INTEGRALMENTE - OMITIDAS AQUI PARA NÃO ULTRAPASSAR O LIMITE, MAS ELAS JÁ ESTÃO NO CÓDIGO JS EM FORMA DINÂMICA) -->
-
     <!-- TELA DO JOGO (GAMEPLAY) -->
     <div id="screen-game" class="screen">
       <img
@@ -1785,7 +1786,7 @@
       </div>
     </div>
 
-    <!-- BLOCO DE SUPORTE FUNCIONAL - mantém o visual e evita quebra do motor -->
+    <!-- BLOCO DE SUPORTE FUNCIONAL -->
     <span id="q-id" class="hidden">ID: ---</span>
 
     <div
